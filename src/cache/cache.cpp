@@ -1,18 +1,63 @@
 #include "highcache/cache/cache.h"
 
 #include <cassert>
+#include <cstring>
 #include <limits>
 #include <stdexcept>
 #include <utility>
 
 namespace highcache {
 
-CacheEntry::CacheEntry(std::string value) : value_(std::move(value)) {}
+CacheEntry::CacheEntry(SlabAllocator &allocator, const std::string_view value)
+    : allocator_(&allocator),
+      data_(static_cast<char *>(allocator.allocate(value.size()))),
+      size_(value.size()) {
+  if (size_ != 0) {
+    std::memcpy(data_, value.data(), size_);
+  }
+}
 
-const std::string &CacheEntry::value() const noexcept { return value_; }
+CacheEntry::~CacheEntry() {
+  if (allocator_ != nullptr) {
+    allocator_->deallocate(data_, size_);
+  }
+}
 
-void CacheEntry::replace_value(std::string value) noexcept {
-  value_.swap(value);
+CacheEntry::CacheEntry(CacheEntry &&other) noexcept
+    : allocator_(other.allocator_), data_(other.data_), size_(other.size_) {
+  other.allocator_ = nullptr;
+  other.data_ = nullptr;
+  other.size_ = 0;
+}
+
+CacheEntry &CacheEntry::operator=(CacheEntry &&other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+
+  if (allocator_ != nullptr) {
+    allocator_->deallocate(data_, size_);
+  }
+  allocator_ = other.allocator_;
+  data_ = other.data_;
+  size_ = other.size_;
+  other.allocator_ = nullptr;
+  other.data_ = nullptr;
+  other.size_ = 0;
+  return *this;
+}
+
+std::string_view CacheEntry::value() const noexcept {
+  if (size_ == 0) {
+    return {};
+  }
+  return {data_, size_};
+}
+
+void CacheEntry::replace_value(CacheEntry replacement) noexcept {
+  assert(allocator_ == replacement.allocator_);
+  std::swap(data_, replacement.data_);
+  std::swap(size_, replacement.size_);
 }
 
 std::string_view to_string(const CacheStatus status) noexcept {
@@ -36,8 +81,13 @@ std::string_view to_string(const CacheStatus status) noexcept {
   return "unknown";
 }
 
-Cache::Cache(const std::size_t capacity_bytes) noexcept
-    : capacity_bytes_(capacity_bytes) {}
+Cache::Cache(const std::size_t capacity_bytes)
+    : capacity_bytes_(capacity_bytes), owned_allocator_(std::in_place),
+      allocator_(*owned_allocator_) {}
+
+Cache::Cache(const std::size_t capacity_bytes, SlabAllocator &allocator)
+    : capacity_bytes_(capacity_bytes), owned_allocator_(std::nullopt),
+      allocator_(allocator) {}
 
 CacheStatus Cache::set(const std::string_view key, const std::string_view value,
                        const std::chrono::milliseconds ttl) {
@@ -59,7 +109,7 @@ CacheStatus Cache::set(const std::string_view key, const std::string_view value,
 
   auto existing = entries_.find(std::string(key));
   if (existing != entries_.end()) {
-    std::string replacement(value);
+    CacheEntry replacement{allocator_, value};
     const auto old_charge =
         entry_charge(existing->first, existing->second.entry.value());
     const auto generation = next_generation();
@@ -80,7 +130,7 @@ CacheStatus Cache::set(const std::string_view key, const std::string_view value,
 
   std::string map_key(key);
   std::string recency_key(key);
-  CacheEntry new_entry{std::string(value)};
+  CacheEntry new_entry{allocator_, value};
   const auto generation = next_generation();
   if (ttl > std::chrono::milliseconds::zero()) {
     timing_wheel_.schedule(std::string(key), generation, ttl);
@@ -117,7 +167,12 @@ CacheStatus Cache::get(const std::string_view key, std::string &output) {
     return CacheStatus::not_found;
   }
 
-  output = entry->second.entry.value();
+  const auto value = entry->second.entry.value();
+  if (value.empty()) {
+    output.clear();
+  } else {
+    output.assign(value.data(), value.size());
+  }
   mark_mru(entry);
   ++hit_count_;
   return CacheStatus::ok;
@@ -168,6 +223,10 @@ std::size_t Cache::miss_count() const noexcept { return miss_count_; }
 std::size_t Cache::eviction_count() const noexcept { return eviction_count_; }
 
 std::size_t Cache::expired_count() const noexcept { return expired_count_; }
+
+SlabAllocatorMetrics Cache::allocator_metrics() const noexcept {
+  return allocator_.metrics();
+}
 
 CacheStatus Cache::validate_key(const std::string_view key) noexcept {
   if (key.empty()) {

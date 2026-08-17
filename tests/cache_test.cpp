@@ -11,8 +11,9 @@ namespace highcache {
 namespace {
 
 TEST(CacheEntryTest, OwnsItsValue) {
+  SlabAllocator allocator;
   std::string source = "original";
-  const CacheEntry entry(source);
+  const CacheEntry entry(allocator, source);
 
   source = "changed";
 

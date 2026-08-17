@@ -4,8 +4,8 @@
 
 namespace highcache {
 
-CacheShard::CacheShard(const std::size_t capacity_bytes) noexcept
-    : cache_(capacity_bytes) {}
+CacheShard::CacheShard(const std::size_t capacity_bytes)
+    : cache_(capacity_bytes, allocator_) {}
 
 CacheStatus CacheShard::set(const std::string_view key,
                             const std::string_view value,
@@ -67,6 +67,11 @@ std::size_t CacheShard::eviction_count() const {
 std::size_t CacheShard::expired_count() const {
   const std::lock_guard lock(mutex_);
   return cache_.expired_count();
+}
+
+SlabAllocatorMetrics CacheShard::allocator_metrics() const {
+  const std::lock_guard lock(mutex_);
+  return cache_.allocator_metrics();
 }
 
 } // namespace highcache

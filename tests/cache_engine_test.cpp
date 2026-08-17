@@ -425,6 +425,9 @@ TEST(CacheEngineConcurrencyTest, TickAndMetricsAreSafeDuringMutation) {
       static_cast<void>(engine.miss_count());
       static_cast<void>(engine.eviction_count());
       static_cast<void>(engine.expired_count());
+      const auto allocator_metrics = engine.allocator_metrics();
+      record(allocator_metrics.used_bytes <= allocator_metrics.allocated_bytes,
+             success);
     }
   });
 

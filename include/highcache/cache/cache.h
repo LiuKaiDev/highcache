@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <list>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -31,7 +32,8 @@ public:
   static constexpr std::size_t max_value_length = 1024 * 1024;
   static constexpr std::size_t default_capacity_bytes = 64 * 1024 * 1024;
 
-  explicit Cache(std::size_t capacity_bytes = default_capacity_bytes) noexcept;
+  explicit Cache(std::size_t capacity_bytes = default_capacity_bytes);
+  Cache(std::size_t capacity_bytes, SlabAllocator &allocator);
 
   Cache(const Cache &) = delete;
   Cache &operator=(const Cache &) = delete;
@@ -53,6 +55,7 @@ public:
   [[nodiscard]] std::size_t miss_count() const noexcept;
   [[nodiscard]] std::size_t eviction_count() const noexcept;
   [[nodiscard]] std::size_t expired_count() const noexcept;
+  [[nodiscard]] SlabAllocatorMetrics allocator_metrics() const noexcept;
 
 private:
   using RecencyList = std::list<std::string>;
@@ -75,6 +78,8 @@ private:
   [[nodiscard]] std::uint64_t next_generation();
 
   std::size_t capacity_bytes_;
+  std::optional<SlabAllocator> owned_allocator_;
+  SlabAllocator &allocator_;
   std::size_t memory_usage_bytes_{0};
   std::size_t hit_count_{0};
   std::size_t miss_count_{0};

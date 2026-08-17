@@ -1,18 +1,29 @@
 #pragma once
 
-#include <string>
+#include "highcache/memory/slab_allocator.h"
+
+#include <cstddef>
+#include <string_view>
 
 namespace highcache {
 
 class CacheEntry final {
 public:
-  explicit CacheEntry(std::string value);
+  CacheEntry(SlabAllocator &allocator, std::string_view value);
+  ~CacheEntry();
 
-  [[nodiscard]] const std::string &value() const noexcept;
-  void replace_value(std::string value) noexcept;
+  CacheEntry(const CacheEntry &) = delete;
+  CacheEntry &operator=(const CacheEntry &) = delete;
+  CacheEntry(CacheEntry &&other) noexcept;
+  CacheEntry &operator=(CacheEntry &&other) noexcept;
+
+  [[nodiscard]] std::string_view value() const noexcept;
+  void replace_value(CacheEntry replacement) noexcept;
 
 private:
-  std::string value_;
+  SlabAllocator *allocator_;
+  char *data_;
+  std::size_t size_;
 };
 
 } // namespace highcache

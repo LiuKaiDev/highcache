@@ -12,7 +12,7 @@ namespace highcache {
 
 class CacheShard final {
 public:
-  explicit CacheShard(std::size_t capacity_bytes) noexcept;
+  explicit CacheShard(std::size_t capacity_bytes);
 
   CacheShard(const CacheShard &) = delete;
   CacheShard &operator=(const CacheShard &) = delete;
@@ -34,9 +34,11 @@ public:
   [[nodiscard]] std::size_t miss_count() const;
   [[nodiscard]] std::size_t eviction_count() const;
   [[nodiscard]] std::size_t expired_count() const;
+  [[nodiscard]] SlabAllocatorMetrics allocator_metrics() const;
 
 private:
   mutable std::mutex mutex_;
+  SlabAllocator allocator_;
   Cache cache_;
 };
 

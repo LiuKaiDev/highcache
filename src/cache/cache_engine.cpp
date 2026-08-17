@@ -106,6 +106,21 @@ std::size_t CacheEngine::expired_count() const {
   return total;
 }
 
+SlabAllocatorMetrics CacheEngine::allocator_metrics() const {
+  SlabAllocatorMetrics total;
+  for (const auto &shard : shards_) {
+    const auto metrics = shard->allocator_metrics();
+    total.allocated_bytes += metrics.allocated_bytes;
+    total.used_bytes += metrics.used_bytes;
+    total.free_bytes += metrics.free_bytes;
+    total.allocation_count += metrics.allocation_count;
+    total.deallocation_count += metrics.deallocation_count;
+    total.internal_fragmentation += metrics.internal_fragmentation;
+    total.slab_count += metrics.slab_count;
+  }
+  return total;
+}
+
 std::size_t CacheEngine::shard_count() const noexcept { return shards_.size(); }
 
 CacheShard &CacheEngine::shard_for(const std::string_view key) noexcept {

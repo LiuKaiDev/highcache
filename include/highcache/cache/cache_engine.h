@@ -39,6 +39,7 @@ public:
   [[nodiscard]] std::size_t miss_count() const;
   [[nodiscard]] std::size_t eviction_count() const;
   [[nodiscard]] std::size_t expired_count() const;
+  [[nodiscard]] SlabAllocatorMetrics allocator_metrics() const;
   [[nodiscard]] std::size_t shard_count() const noexcept;
 
 private:
