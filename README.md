@@ -4,7 +4,7 @@ HighCache is a C++20/Linux project that will evolve into a high-performance mult
 
 ## Current status
 
-**Phase 2 - LRU + memory limit is complete.**
+**Phase 3 - TTL + Timing Wheel is complete.**
 
 The current implementation provides:
 
@@ -19,26 +19,46 @@ The current implementation provides:
 - SET, GET, and DELETE-equivalent operations
 - explicit cache result statuses and key/value validation
 - configurable logical memory capacity and automatic LRU eviction
-- cache-local hit, miss, and eviction counters
+- optional per-SET TTL with deterministic one-second logical ticks
+- a 60-slot single-level Timing Wheel with rounds for long TTLs
+- generation-based stale timer protection
+- cache-local hit, miss, eviction, and expiration counters
 - deterministic randomized cache correctness coverage
 - minimal `highcache_server` startup executable
 - unit tests and a server smoke test
 
-It intentionally does **not** implement TTL or timing wheels, concurrency or sharding, slab allocation, networking, a protocol, or benchmarks.
+It intentionally does **not** implement concurrency or sharding, slab allocation, networking, a protocol, or benchmarks.
 
 ## Cache core
 
 `highcache::Cache` provides `set`, `get`, and `erase` operations backed by `std::unordered_map`. Keys and values are copied into cache-owned `std::string` storage. Recency is tracked from most to least recently used; successful insertions, overwrites, and GET hits make an entry most recently used. GET is non-const because a hit mutates this recency metadata.
 
-Cache operations return `CacheStatus` values instead of throwing for normal outcomes. Successful inserts and overwrites return `ok`; missing GET and DELETE operations return `not_found`. Invalid requests return `invalid_key`, `key_too_large`, or `value_too_large`. An otherwise valid item larger than the cache capacity returns `item_too_large` without evicting or changing existing state. A failed GET leaves its output string unchanged.
+Cache operations return `CacheStatus` values instead of throwing for normal outcomes. Successful inserts and overwrites return `ok`; missing GET and DELETE operations return `not_found`. Invalid requests return `invalid_key`, `key_too_large`, `value_too_large`, or `invalid_ttl`. An otherwise valid item larger than the cache capacity returns `item_too_large` without evicting or changing existing state. A failed GET leaves its output string unchanged.
 
 Empty keys are invalid and empty values are supported. Keys may contain at most 250 bytes and values at most 1 MiB. These limits provide explicit, practical guardrails for the normal-allocation baseline and are not coupled to a network protocol.
 
 Capacity is selected when constructing a cache and defaults to 64 MiB. Memory usage is a deterministic logical charge of `key.size() + value.size()` per entry; container nodes, allocator metadata, string capacity, and process memory are intentionally excluded. SET evicts least-recently-used entries until a valid item fits. `capacity_bytes()` and `memory_usage_bytes()` expose the configured limit and current charge.
 
-Successful GET hits increment `hit_count()`, valid missing GETs increment `miss_count()`, and each capacity-driven eviction increments `eviction_count()`. Invalid GETs and explicit DELETE operations do not affect miss or eviction counts.
+Successful GET hits increment `hit_count()`, valid missing GETs increment `miss_count()`, and each capacity-driven eviction increments `eviction_count()`. Genuine TTL expirations increment `expired_count()` and do not count as capacity evictions. Stale timers and explicit DELETE operations do not increment either expiration or eviction counters.
 
-The cache tests cover insertion, lookup, deletion, overwrites, ownership, boundaries, LRU ordering, accounting, state preservation, counters, and two 100,000-operation fixed-seed randomized correctness scenarios. These are correctness tests, not benchmarks.
+## TTL and logical time
+
+`set` accepts an optional TTL without changing persistent calls:
+
+```cpp
+cache.set("persistent", "value");
+cache.set("temporary", "value", std::chrono::milliseconds{1500});
+```
+
+A zero TTL creates a persistent entry. A positive TTL expires after the requested duration rounded upward to the next one-second tick, so a positive sub-second TTL lasts until the first tick. A negative TTL returns `invalid_ttl` without changing the entry, its LRU position, accounting, generation, or existing expiration.
+
+Phase 3 has no clock or background thread. Each explicit `cache.tick()` call advances logical cache time by exactly one second and processes the next slot of a 60-slot single-level Timing Wheel. Long TTLs use rotation rounds, with a timer placed at `(current_slot + ticks) % 60` and carrying `(ticks - 1) / 60` remaining rounds.
+
+Each successful SET assigns a cache-wide monotonically increasing generation. A timer owns only its key, scheduled generation, and remaining rounds; it never references a cache entry. Missing keys and generation mismatches make old timers harmless after overwrite, DELETE, or LRU eviction and reinsertion.
+
+A current timer removes the entry from storage and the LRU list, releases its logical memory charge, and increments `expired_count()`. Timing Wheel nodes and duplicated timer keys are excluded from `memory_usage_bytes()`, which remains the deterministic `key.size() + value.size()` cache-entry charge rather than process RSS or total metadata memory.
+
+The cache tests cover insertion, lookup, deletion, overwrites, ownership, boundaries, LRU ordering, accounting, state preservation, TTL boundaries and rounds, stale timers, and counters. Three fixed-seed reference-model scenarios each exercise 100,000 operations, including a mixed TTL correctness stress test. These are correctness tests, not benchmarks.
 
 ## Configuration
 

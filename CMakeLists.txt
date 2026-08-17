@@ -28,6 +28,7 @@ add_library(highcache_core
     src/common/error.cpp
     src/config/config.cpp
     src/logging/logger.cpp
+    src/timer/timing_wheel.cpp
 )
 target_include_directories(highcache_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

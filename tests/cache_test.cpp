@@ -26,6 +26,7 @@ TEST(CacheStatusTest, ProvidesStableNames) {
   EXPECT_EQ(to_string(CacheStatus::key_too_large), "key_too_large");
   EXPECT_EQ(to_string(CacheStatus::value_too_large), "value_too_large");
   EXPECT_EQ(to_string(CacheStatus::item_too_large), "item_too_large");
+  EXPECT_EQ(to_string(CacheStatus::invalid_ttl), "invalid_ttl");
 }
 
 TEST(CacheTest, SetsThenGetsValue) {

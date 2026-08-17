@@ -1,6 +1,8 @@
 #include "highcache/cache/cache.h"
 
 #include <cassert>
+#include <limits>
+#include <stdexcept>
 #include <utility>
 
 namespace highcache {
@@ -27,6 +29,8 @@ std::string_view to_string(const CacheStatus status) noexcept {
     return "value_too_large";
   case CacheStatus::item_too_large:
     return "item_too_large";
+  case CacheStatus::invalid_ttl:
+    return "invalid_ttl";
   }
 
   return "unknown";
@@ -35,14 +39,17 @@ std::string_view to_string(const CacheStatus status) noexcept {
 Cache::Cache(const std::size_t capacity_bytes) noexcept
     : capacity_bytes_(capacity_bytes) {}
 
-CacheStatus Cache::set(const std::string_view key,
-                       const std::string_view value) {
+CacheStatus Cache::set(const std::string_view key, const std::string_view value,
+                       const std::chrono::milliseconds ttl) {
   const auto key_status = validate_key(key);
   if (key_status != CacheStatus::ok) {
     return key_status;
   }
   if (value.size() > max_value_length) {
     return CacheStatus::value_too_large;
+  }
+  if (ttl.count() < 0) {
+    return CacheStatus::invalid_ttl;
   }
 
   const auto new_charge = entry_charge(key, value);
@@ -55,6 +62,10 @@ CacheStatus Cache::set(const std::string_view key,
     std::string replacement(value);
     const auto old_charge =
         entry_charge(existing->first, existing->second.entry.value());
+    const auto generation = next_generation();
+    if (ttl > std::chrono::milliseconds::zero()) {
+      timing_wheel_.schedule(std::string(key), generation, ttl);
+    }
 
     mark_mru(existing);
     while (memory_usage_bytes_ - old_charge > capacity_bytes_ - new_charge) {
@@ -62,6 +73,7 @@ CacheStatus Cache::set(const std::string_view key,
     }
 
     existing->second.entry.replace_value(std::move(replacement));
+    existing->second.generation = generation;
     memory_usage_bytes_ = memory_usage_bytes_ - old_charge + new_charge;
     return CacheStatus::ok;
   }
@@ -69,6 +81,10 @@ CacheStatus Cache::set(const std::string_view key,
   std::string map_key(key);
   std::string recency_key(key);
   CacheEntry new_entry{std::string(value)};
+  const auto generation = next_generation();
+  if (ttl > std::chrono::milliseconds::zero()) {
+    timing_wheel_.schedule(std::string(key), generation, ttl);
+  }
 
   while (memory_usage_bytes_ > capacity_bytes_ - new_charge) {
     evict_lru();
@@ -76,9 +92,9 @@ CacheStatus Cache::set(const std::string_view key,
 
   recency_.push_front(std::move(recency_key));
   try {
-    const auto inserted =
-        entries_.emplace(std::move(map_key),
-                         StoredEntry{std::move(new_entry), recency_.begin()});
+    const auto inserted = entries_.emplace(
+        std::move(map_key),
+        StoredEntry{std::move(new_entry), recency_.begin(), generation});
     assert(inserted.second);
   } catch (...) {
     recency_.pop_front();
@@ -118,11 +134,21 @@ CacheStatus Cache::erase(const std::string_view key) {
     return CacheStatus::not_found;
   }
 
-  memory_usage_bytes_ -=
-      entry_charge(entry->first, entry->second.entry.value());
-  recency_.erase(entry->second.recency_position);
-  entries_.erase(entry);
+  remove_entry(entry);
   return CacheStatus::ok;
+}
+
+void Cache::tick() {
+  for (const auto &event : timing_wheel_.tick()) {
+    const auto entry = entries_.find(event.key);
+    if (entry == entries_.end() ||
+        entry->second.generation != event.generation) {
+      continue;
+    }
+
+    remove_entry(entry);
+    ++expired_count_;
+  }
 }
 
 std::size_t Cache::size() const noexcept { return entries_.size(); }
@@ -140,6 +166,8 @@ std::size_t Cache::hit_count() const noexcept { return hit_count_; }
 std::size_t Cache::miss_count() const noexcept { return miss_count_; }
 
 std::size_t Cache::eviction_count() const noexcept { return eviction_count_; }
+
+std::size_t Cache::expired_count() const noexcept { return expired_count_; }
 
 CacheStatus Cache::validate_key(const std::string_view key) noexcept {
   if (key.empty()) {
@@ -162,17 +190,29 @@ void Cache::mark_mru(const EntryMap::iterator entry) {
   entry->second.recency_position = recency_.begin();
 }
 
+void Cache::remove_entry(const EntryMap::iterator entry) {
+  memory_usage_bytes_ -=
+      entry_charge(entry->first, entry->second.entry.value());
+  recency_.erase(entry->second.recency_position);
+  entries_.erase(entry);
+}
+
 void Cache::evict_lru() {
   assert(!recency_.empty());
   const auto &lru_key = recency_.back();
   const auto entry = entries_.find(lru_key);
   assert(entry != entries_.end());
 
-  memory_usage_bytes_ -=
-      entry_charge(entry->first, entry->second.entry.value());
-  entries_.erase(entry);
-  recency_.pop_back();
+  remove_entry(entry);
   ++eviction_count_;
+}
+
+std::uint64_t Cache::next_generation() {
+  if (generation_source_ == std::numeric_limits<std::uint64_t>::max()) {
+    throw std::overflow_error("cache entry generation exhausted");
+  }
+
+  return ++generation_source_;
 }
 
 } // namespace highcache

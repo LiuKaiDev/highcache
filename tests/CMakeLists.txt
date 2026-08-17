@@ -18,6 +18,7 @@ endif()
 
 add_executable(highcache_tests
     cache_eviction_test.cpp
+    cache_ttl_test.cpp
     cache_test.cpp
     config_test.cpp
     error_test.cpp
