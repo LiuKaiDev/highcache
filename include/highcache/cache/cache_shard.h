@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -12,7 +13,8 @@ namespace highcache {
 
 class CacheShard final {
 public:
-  explicit CacheShard(std::size_t capacity_bytes);
+  CacheShard(std::size_t capacity_bytes,
+             AllocatorBackend allocator_backend = AllocatorBackend::slab);
 
   CacheShard(const CacheShard &) = delete;
   CacheShard &operator=(const CacheShard &) = delete;
@@ -38,7 +40,7 @@ public:
 
 private:
   mutable std::mutex mutex_;
-  SlabAllocator allocator_;
+  std::unique_ptr<ValueAllocator> allocator_;
   Cache cache_;
 };
 

@@ -1,22 +1,16 @@
 #pragma once
 
+#include "highcache/memory/value_allocator.h"
+
 #include <array>
 #include <cstddef>
 #include <memory>
 
 namespace highcache {
 
-struct SlabAllocatorMetrics final {
-  std::size_t allocated_bytes{0};
-  std::size_t used_bytes{0};
-  std::size_t free_bytes{0};
-  std::size_t allocation_count{0};
-  std::size_t deallocation_count{0};
-  std::size_t internal_fragmentation{0};
-  std::size_t slab_count{0};
-};
+using SlabAllocatorMetrics = ValueAllocatorMetrics;
 
-class SlabAllocator final {
+class SlabAllocator final : public ValueAllocator {
 public:
   static constexpr std::size_t slab_size = 1024 * 1024;
   static constexpr std::array<std::size_t, 8> size_classes{
@@ -30,12 +24,12 @@ public:
   SlabAllocator(SlabAllocator &&) = delete;
   SlabAllocator &operator=(SlabAllocator &&) = delete;
 
-  [[nodiscard]] void *allocate(std::size_t size);
+  [[nodiscard]] void *allocate(std::size_t size) override;
 
   // The size must exactly match the original non-zero allocation request.
-  void deallocate(void *pointer, std::size_t size) noexcept;
+  void deallocate(void *pointer, std::size_t size) noexcept override;
 
-  [[nodiscard]] const SlabAllocatorMetrics &metrics() const noexcept;
+  [[nodiscard]] const SlabAllocatorMetrics &metrics() const noexcept override;
 
   // Returns zero for zero-size requests, the selected class for slab requests,
   // and the request itself for large-object fallback allocations.

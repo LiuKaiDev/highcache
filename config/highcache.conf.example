@@ -6,3 +6,8 @@ log_level=info
 host=127.0.0.1
 port=11211
 worker_threads=4
+
+# Cache comparison controls. Slab remains the default allocator.
+cache_capacity_bytes=67108864
+shard_count=64
+allocator=slab

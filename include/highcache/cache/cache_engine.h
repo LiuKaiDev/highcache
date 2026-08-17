@@ -17,7 +17,8 @@ public:
 
   explicit CacheEngine(
       std::size_t capacity_bytes = Cache::default_capacity_bytes,
-      std::size_t shard_count = default_shard_count);
+      std::size_t shard_count = default_shard_count,
+      AllocatorBackend allocator_backend = AllocatorBackend::slab);
 
   CacheEngine(const CacheEngine &) = delete;
   CacheEngine &operator=(const CacheEngine &) = delete;
@@ -41,11 +42,13 @@ public:
   [[nodiscard]] std::size_t expired_count() const;
   [[nodiscard]] SlabAllocatorMetrics allocator_metrics() const;
   [[nodiscard]] std::size_t shard_count() const noexcept;
+  [[nodiscard]] AllocatorBackend allocator_backend() const noexcept;
 
 private:
   [[nodiscard]] CacheShard &shard_for(std::string_view key) noexcept;
 
   std::size_t capacity_bytes_;
+  AllocatorBackend allocator_backend_;
   std::vector<std::unique_ptr<CacheShard>> shards_;
 };
 

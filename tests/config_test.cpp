@@ -1,3 +1,4 @@
+#include "highcache/cache/cache_engine.h"
 #include "highcache/common/error.h"
 #include "highcache/config/config.h"
 
@@ -18,11 +19,16 @@ TEST(ConfigTest, UsesInfoLoggingByDefault) {
   EXPECT_EQ(config.host(), "127.0.0.1");
   EXPECT_EQ(config.port(), 11211U);
   EXPECT_EQ(config.worker_threads(), 4U);
+  EXPECT_EQ(config.cache_capacity_bytes(), Cache::default_capacity_bytes);
+  EXPECT_EQ(config.shard_count(), CacheEngine::default_shard_count);
+  EXPECT_EQ(config.allocator_backend(), AllocatorBackend::slab);
 }
 
 TEST(ConfigTest, ParsesWhitespaceAndComments) {
   std::istringstream input("\n  # HighCache settings\n log_level = debug \n"
-                           " host = 0.0.0.0\n port = 0\n worker_threads = 8\n");
+                           " host = 0.0.0.0\n port = 0\n worker_threads = 8\n"
+                           " cache_capacity_bytes = 268435456\n"
+                           " shard_count = 128\n allocator = system\n");
 
   const auto config = Config::from_stream(input, "test.conf");
 
@@ -30,6 +36,9 @@ TEST(ConfigTest, ParsesWhitespaceAndComments) {
   EXPECT_EQ(config.host(), "0.0.0.0");
   EXPECT_EQ(config.port(), 0U);
   EXPECT_EQ(config.worker_threads(), 8U);
+  EXPECT_EQ(config.cache_capacity_bytes(), 268435456U);
+  EXPECT_EQ(config.shard_count(), 128U);
+  EXPECT_EQ(config.allocator_backend(), AllocatorBackend::system);
 }
 
 TEST(ConfigTest, LoadsConfigurationFromFile) {
@@ -86,7 +95,9 @@ TEST(ConfigTest, RejectsInvalidLogLevel) {
 TEST(ConfigTest, RejectsInvalidNetworkNumbersAndZeroWorkers) {
   for (const auto *const content :
        {"port=-1\n", "port=65536\n", "port=text\n", "worker_threads=0\n",
-        "worker_threads=1025\n"}) {
+        "worker_threads=1025\n", "cache_capacity_bytes=0\n",
+        "cache_capacity_bytes=text\n", "shard_count=0\n", "shard_count=1025\n",
+        "allocator=arena\n"}) {
     std::istringstream input(content);
     EXPECT_THROW(static_cast<void>(Config::from_stream(input)), HighCacheError)
         << content;

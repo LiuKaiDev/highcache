@@ -8,7 +8,7 @@
 
 namespace highcache {
 
-CacheEntry::CacheEntry(SlabAllocator &allocator, const std::string_view value)
+CacheEntry::CacheEntry(ValueAllocator &allocator, const std::string_view value)
     : allocator_(&allocator),
       data_(static_cast<char *>(allocator.allocate(value.size()))),
       size_(value.size()) {
@@ -85,7 +85,7 @@ Cache::Cache(const std::size_t capacity_bytes)
     : capacity_bytes_(capacity_bytes), owned_allocator_(std::in_place),
       allocator_(*owned_allocator_) {}
 
-Cache::Cache(const std::size_t capacity_bytes, SlabAllocator &allocator)
+Cache::Cache(const std::size_t capacity_bytes, ValueAllocator &allocator)
     : capacity_bytes_(capacity_bytes), owned_allocator_(std::nullopt),
       allocator_(allocator) {}
 
@@ -146,6 +146,7 @@ CacheStatus Cache::set(const std::string_view key, const std::string_view value,
         std::move(map_key),
         StoredEntry{std::move(new_entry), recency_.begin(), generation});
     assert(inserted.second);
+    static_cast<void>(inserted);
   } catch (...) {
     recency_.pop_front();
     throw;

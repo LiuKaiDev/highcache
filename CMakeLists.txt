@@ -37,6 +37,7 @@ add_library(highcache_core
     src/config/config.cpp
     src/logging/logger.cpp
     src/memory/slab_allocator.cpp
+    src/memory/value_allocator.cpp
     src/net/buffer.cpp
     src/net/cache_server.cpp
     src/net/connection.cpp
@@ -60,6 +61,19 @@ add_executable(highcache_client
     src/client/main.cpp
 )
 target_link_libraries(highcache_client PRIVATE highcache_core)
+
+add_library(highcache_benchmark_lib
+    benchmark/benchmark.cpp
+)
+target_include_directories(highcache_benchmark_lib PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+)
+target_link_libraries(highcache_benchmark_lib PUBLIC highcache_core)
+
+add_executable(highcache_benchmark
+    benchmark/main.cpp
+)
+target_link_libraries(highcache_benchmark PRIVATE highcache_benchmark_lib)
 
 include(CTest)
 if(BUILD_TESTING)

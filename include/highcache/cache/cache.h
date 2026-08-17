@@ -1,6 +1,7 @@
 #pragma once
 
 #include "highcache/cache/cache_entry.h"
+#include "highcache/memory/slab_allocator.h"
 #include "highcache/timer/timing_wheel.h"
 
 #include <chrono>
@@ -33,7 +34,7 @@ public:
   static constexpr std::size_t default_capacity_bytes = 64 * 1024 * 1024;
 
   explicit Cache(std::size_t capacity_bytes = default_capacity_bytes);
-  Cache(std::size_t capacity_bytes, SlabAllocator &allocator);
+  Cache(std::size_t capacity_bytes, ValueAllocator &allocator);
 
   Cache(const Cache &) = delete;
   Cache &operator=(const Cache &) = delete;
@@ -79,7 +80,7 @@ private:
 
   std::size_t capacity_bytes_;
   std::optional<SlabAllocator> owned_allocator_;
-  SlabAllocator &allocator_;
+  ValueAllocator &allocator_;
   std::size_t memory_usage_bytes_{0};
   std::size_t hit_count_{0};
   std::size_t miss_count_{0};

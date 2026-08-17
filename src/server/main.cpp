@@ -48,7 +48,9 @@ int main(const int argc, char *argv[]) {
         argc == 2 ? highcache::Config::from_file(argv[1]) : highcache::Config{};
     highcache::Logger logger(config.log_level());
     const auto shutdown_signals = block_shutdown_signals();
-    highcache::CacheEngine engine;
+    highcache::CacheEngine engine(config.cache_capacity_bytes(),
+                                  config.shard_count(),
+                                  config.allocator_backend());
     highcache::CacheServer server(
         engine, {config.host(), config.port(), config.worker_threads(),
                  highcache::ServerOptions{}.pending_output_limit});
@@ -57,7 +59,9 @@ int main(const int argc, char *argv[]) {
     std::ostringstream startup;
     startup << "HighCache listening on " << server.host() << ':'
             << server.port() << " with " << server.worker_count()
-            << " workers and " << engine.shard_count() << " cache shards";
+            << " workers, " << engine.shard_count() << " cache shards, and "
+            << highcache::to_string(engine.allocator_backend())
+            << " value allocation";
     logger.info(startup.str());
 
     int received_signal = 0;
@@ -68,6 +72,18 @@ int main(const int argc, char *argv[]) {
     }
     server.request_stop();
     server.join();
+    const auto allocator = engine.allocator_metrics();
+    std::ostringstream metrics;
+    metrics << "Cache metrics: entries=" << engine.size()
+            << " logical_bytes=" << engine.memory_usage_bytes()
+            << " allocator_reserved_bytes=" << allocator.allocated_bytes
+            << " allocator_used_bytes=" << allocator.used_bytes
+            << " allocator_fragmentation_bytes="
+            << allocator.internal_fragmentation
+            << " allocator_allocations=" << allocator.allocation_count
+            << " allocator_deallocations=" << allocator.deallocation_count
+            << " allocator_slabs=" << allocator.slab_count;
+    logger.info(metrics.str());
     logger.info("HighCache stopped");
     return 0;
   } catch (const highcache::HighCacheError &error) {

@@ -8,8 +8,9 @@
 namespace highcache {
 
 CacheEngine::CacheEngine(const std::size_t capacity_bytes,
-                         const std::size_t shard_count)
-    : capacity_bytes_(capacity_bytes) {
+                         const std::size_t shard_count,
+                         const AllocatorBackend allocator_backend)
+    : capacity_bytes_(capacity_bytes), allocator_backend_(allocator_backend) {
   if (shard_count == 0) {
     throw HighCacheError(ErrorCode::invalid_argument,
                          "cache shard count must be greater than zero");
@@ -21,7 +22,8 @@ CacheEngine::CacheEngine(const std::size_t capacity_bytes,
   for (std::size_t shard_index = 0; shard_index < shard_count; ++shard_index) {
     const auto shard_capacity =
         base_capacity + static_cast<std::size_t>(shard_index < remainder);
-    shards_.push_back(std::make_unique<CacheShard>(shard_capacity));
+    shards_.push_back(
+        std::make_unique<CacheShard>(shard_capacity, allocator_backend_));
   }
 }
 
@@ -122,6 +124,10 @@ SlabAllocatorMetrics CacheEngine::allocator_metrics() const {
 }
 
 std::size_t CacheEngine::shard_count() const noexcept { return shards_.size(); }
+
+AllocatorBackend CacheEngine::allocator_backend() const noexcept {
+  return allocator_backend_;
+}
 
 CacheShard &CacheEngine::shard_for(const std::string_view key) noexcept {
   const auto shard_index = std::hash<std::string_view>{}(key) % shards_.size();

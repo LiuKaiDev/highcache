@@ -76,6 +76,7 @@ TEST(CacheEngineTest, ProvidesDefaultsAndRejectsZeroShards) {
 
   EXPECT_EQ(engine.capacity_bytes(), Cache::default_capacity_bytes);
   EXPECT_EQ(engine.shard_count(), CacheEngine::default_shard_count);
+  EXPECT_EQ(engine.allocator_backend(), AllocatorBackend::slab);
   EXPECT_TRUE(engine.empty());
 
   try {

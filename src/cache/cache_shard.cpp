@@ -4,8 +4,10 @@
 
 namespace highcache {
 
-CacheShard::CacheShard(const std::size_t capacity_bytes)
-    : cache_(capacity_bytes, allocator_) {}
+CacheShard::CacheShard(const std::size_t capacity_bytes,
+                       const AllocatorBackend allocator_backend)
+    : allocator_(make_value_allocator(allocator_backend)),
+      cache_(capacity_bytes, *allocator_) {}
 
 CacheStatus CacheShard::set(const std::string_view key,
                             const std::string_view value,

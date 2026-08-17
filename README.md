@@ -4,7 +4,7 @@ HighCache is a C++20/Linux project that will evolve into a high-performance mult
 
 ## Current status
 
-**Phase 6 - epoll Network Server is complete.**
+**Phase 7 - benchmarking and data-driven optimization is in progress.**
 
 The current implementation provides:
 
@@ -34,9 +34,12 @@ The current implementation provides:
 - server-owned TTL advancement through one monotonic `timerfd`
 - deterministic randomized cache correctness coverage
 - real `highcache_server` and a small `highcache_client` command-line client
+- a concurrent epoll-based `highcache_benchmark` using the real TCP protocol
 - unit, socket, and loopback TCP integration tests
 
-It intentionally does **not** implement Phase 7 benchmark or performance work.
+Phase 7 measurements and profiling conclusions are recorded in
+[docs/benchmark.md](docs/benchmark.md); no performance claim is made without
+repeatable Release-build data.
 
 ## Cache core
 

@@ -64,6 +64,9 @@ Config Config::from_stream(std::istream &input,
   bool has_host = false;
   bool has_port = false;
   bool has_worker_threads = false;
+  bool has_cache_capacity_bytes = false;
+  bool has_shard_count = false;
+  bool has_allocator_backend = false;
   std::string line;
   std::size_t line_number = 0;
 
@@ -151,6 +154,62 @@ Config Config::from_stream(std::istream &input,
       continue;
     }
 
+    if (key == "cache_capacity_bytes") {
+      if (has_cache_capacity_bytes) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: cache_capacity_bytes");
+      }
+      try {
+        const auto parsed = parse_unsigned(value);
+        if (parsed == 0 || parsed > std::numeric_limits<std::size_t>::max()) {
+          throw HighCacheError(ErrorCode::invalid_argument,
+                               "cache capacity outside supported range");
+        }
+        config.cache_capacity_bytes_ = static_cast<std::size_t>(parsed);
+      } catch (const HighCacheError &) {
+        throw_parse_error(source_name, line_number,
+                          "invalid cache_capacity_bytes: " +
+                              std::string(value));
+      }
+      has_cache_capacity_bytes = true;
+      continue;
+    }
+
+    if (key == "shard_count") {
+      if (has_shard_count) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: shard_count");
+      }
+      try {
+        const auto parsed = parse_unsigned(value);
+        if (parsed == 0 || parsed > 1024) {
+          throw HighCacheError(ErrorCode::invalid_argument,
+                               "shard count outside supported range");
+        }
+        config.shard_count_ = static_cast<std::size_t>(parsed);
+      } catch (const HighCacheError &) {
+        throw_parse_error(source_name, line_number,
+                          "invalid shard_count: " + std::string(value));
+      }
+      has_shard_count = true;
+      continue;
+    }
+
+    if (key == "allocator") {
+      if (has_allocator_backend) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: allocator");
+      }
+      try {
+        config.allocator_backend_ = parse_allocator_backend(value);
+      } catch (const HighCacheError &) {
+        throw_parse_error(source_name, line_number,
+                          "invalid allocator: " + std::string(value));
+      }
+      has_allocator_backend = true;
+      continue;
+    }
+
     throw_parse_error(source_name, line_number,
                       "unknown configuration key: " + std::string(key));
   }
@@ -171,5 +230,15 @@ const std::string &Config::host() const noexcept { return host_; }
 std::uint16_t Config::port() const noexcept { return port_; }
 
 std::size_t Config::worker_threads() const noexcept { return worker_threads_; }
+
+std::size_t Config::cache_capacity_bytes() const noexcept {
+  return cache_capacity_bytes_;
+}
+
+std::size_t Config::shard_count() const noexcept { return shard_count_; }
+
+AllocatorBackend Config::allocator_backend() const noexcept {
+  return allocator_backend_;
+}
 
 } // namespace highcache

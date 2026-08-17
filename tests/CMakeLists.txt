@@ -17,6 +17,7 @@ if(NOT GTest_FOUND)
 endif()
 
 add_executable(highcache_tests
+    benchmark_test.cpp
     buffer_test.cpp
     cache_server_test.cpp
     cache_engine_test.cpp
@@ -30,9 +31,11 @@ add_executable(highcache_tests
     logger_test.cpp
     protocol_codec_test.cpp
     slab_allocator_test.cpp
+    value_allocator_test.cpp
 )
 
 target_link_libraries(highcache_tests PRIVATE
+    highcache_benchmark_lib
     highcache_core
     GTest::gtest_main
 )
