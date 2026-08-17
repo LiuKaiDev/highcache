@@ -4,7 +4,7 @@ HighCache is a C++20/Linux project that will evolve into a high-performance mult
 
 ## Current status
 
-**Phase 7 - benchmarking and data-driven optimization is in progress.**
+**Phase 7 - benchmarking, profiling, and data-driven optimization is complete.**
 
 The current implementation provides:
 
@@ -38,8 +38,10 @@ The current implementation provides:
 - unit, socket, and loopback TCP integration tests
 
 Phase 7 measurements and profiling conclusions are recorded in
-[docs/benchmark.md](docs/benchmark.md); no performance claim is made without
-repeatable Release-build data.
+[docs/benchmark.md](docs/benchmark.md). In three identical one-million-request
+Workload B repetitions, removing a profiled 64 KiB read-buffer zero-fill raised
+median QPS from 161681.761 to 174477.848 (7.914%). AVG and P50 improved while
+P95 and P99 regressed; the report includes the full result and limitations.
 
 ## Cache core
 

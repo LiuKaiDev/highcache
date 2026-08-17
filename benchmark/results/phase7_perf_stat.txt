@@ -1,0 +1,16 @@
+# started on Tue Aug 18 00:51:38 2026
+
+
+ Performance counter stats for process id '92944':
+
+          72391.26 msec task-clock:u                     #    3.616 CPUs utilized
+       59631311192      cycles:u                         #    0.824 GHz
+       10267884685      instructions:u                   #    0.17  insn per cycle
+        2092920828      branches:u                       #   28.911 M/sec
+         102796594      branch-misses:u                  #    4.91% of all branches
+        5088907733      cache-references:u               #   70.297 M/sec
+         230567168      cache-misses:u                   #    4.53% of all cache refs
+                 0      context-switches:u               #    0.000 /sec
+                 0      cpu-migrations:u                 #    0.000 /sec
+
+      20.018182568 seconds time elapsed

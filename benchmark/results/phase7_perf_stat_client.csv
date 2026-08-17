@@ -1,0 +1,2 @@
+requests,successful,failed,threads,connections,value_size,get_ratio,duration_seconds,throughput_rps,avg_us,p50_us,p95_us,p99_us,get_hits,get_misses,hit_ratio,key_space,seed,pipeline,warmup_requests,error_count
+5000000,5000000,0,8,128,256,0.800,30.309,164967.701,765.295,596.900,1870.704,3855.407,4000000,0,1.000,100000,12345,1,10000,0

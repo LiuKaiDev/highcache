@@ -1,0 +1,2 @@
+[ perf record: Woken up 57 times to write data ]
+[ perf record: Captured and wrote 15.290 MB /tmp/highcache-phase7-perf.data (1835 samples) ]

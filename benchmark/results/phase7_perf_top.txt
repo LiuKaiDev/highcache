@@ -1,0 +1,72 @@
+[H[2J
+   PerfTop:       0 irqs/sec  kernel: 0.0%  exact:  0.0% lost: 0/0 drop: 0/0 [99Hz cpu-clock:u],  (target_tid: 94424,94426,94427,94428,94429,94430)
+-------------------------------------------------------------------------------
+
+[H[2J
+   PerfTop:     107 irqs/sec  kernel: 0.0%  exact:  0.0% lost: 0/0 drop: 0/0 [99Hz cpu-clock:u],  (target_tid: 94424,94426,94427,94428,94429,94430)
+-------------------------------------------------------------------------------
+
+    25.79%  libc.so.6            [.] 0x000000000018954a
+    15.21%  libc.so.6            [.] epoll_ctl
+    12.24%  libc.so.6            [.] recv
+     9.28%  libc.so.6            [.] __send
+     4.82%  highcache_server     [.] std::_Hashtable<std::__cxx11::basic_strin
+     4.45%  highcache_server     [.] highcache::(anonymous namespace)::Worker:
+     2.78%  libc.so.6            [.] malloc
+     2.23%  highcache_server     [.] highcache::Connection::handle_readable()
+     1.86%  libc.so.6            [.] pthread_mutex_lock
+     1.86%  libc.so.6            [.] 0x0000000000188a91
+     1.30%  libc.so.6            [.] cfree
+     1.11%  libstdc++.so.6.0.33  [.] std::_Hash_bytes(void const*, unsigned lo
+     0.93%  highcache_server     [.] highcache::Buffer::append(std::basic_stri
+     0.93%  highcache_server     [.] highcache::Buffer::empty() const
+     0.93%  highcache_server     [.] highcache::protocol::decode_request(highc
+     0.93%  libc.so.6            [.] 0x0000000000188619
+     0.74%  highcache_server     [.] highcache::Buffer::readable_bytes() const
+     0.74%  highcache_server     [.] highcache::Cache::set(std::basic_string_v
+     0.74%  highcache_server     [.] highcache::CacheEngine::get(std::basic_st
+     0.74%  libc.so.6            [.] epoll_wait
+     0.74%  libstdc++.so.6.0.33  [.] std::__detail::_List_node_base::_M_transf
+     0.56%  highcache_server     [.] highcache::Connection::process_input()
+     0.56%  highcache_server     [.] highcache::SlabAllocator::allocate(unsign
+     0.56%  highcache_server     [.] std::_Hashtable<std::__cxx11::basic_strin
+     0.56%  libc.so.6            [.] 0x00000000000985ef
+     0.56%  libstdc++.so.6.0.33  [.] operator delete(void*, unsigned long)
+     0.37%  highcache_server     [.] highcache::Buffer::append(void const*, un
+     0.37%  highcache_server     [.] highcache::Connection::handle_writable()
+     0.37%  highcache_server     [.] highcache::protocol::(anonymous namespace
+     0.37%  highcache_server     [.] highcache::protocol::encode_response[abi:
+[H[2J
+   PerfTop:     118 irqs/sec  kernel: 0.0%  exact:  0.0% lost: 0/0 drop: 0/0 [99Hz cpu-clock:u],  (target_tid: 94424,94426,94427,94428,94429,94430)
+-------------------------------------------------------------------------------
+
+    25.91%  libc.so.6            [.] 0x000000000018954a
+    13.89%  libc.so.6            [.] recv
+    12.86%  libc.so.6            [.] epoll_ctl
+     9.19%  libc.so.6            [.] __send
+     6.65%  highcache_server     [.] std::_Hashtable<std::__cxx11::basic_strin
+     3.76%  highcache_server     [.] highcache::(anonymous namespace)::Worker:
+     2.61%  libc.so.6            [.] 0x0000000000188a91
+     2.36%  libc.so.6            [.] malloc
+     2.21%  highcache_server     [.] highcache::Connection::handle_readable()
+     1.67%  libc.so.6            [.] pthread_mutex_lock
+     1.46%  libstdc++.so.6.0.33  [.] std::__detail::_List_node_base::_M_transf
+     0.95%  libc.so.6            [.] cfree
+     0.88%  libc.so.6            [.] 0x0000000000188619
+     0.79%  highcache_server     [.] highcache::Buffer::append(std::basic_stri
+     0.71%  libc.so.6            [.] epoll_wait
+     0.69%  highcache_server     [.] highcache::Buffer::empty() const
+     0.68%  libstdc++.so.6.0.33  [.] std::_Hash_bytes(void const*, unsigned lo
+     0.62%  highcache_server     [.] highcache::SlabAllocator::allocate(unsign
+     0.61%  highcache_server     [.] highcache::Buffer::readable_bytes() const
+     0.60%  highcache_server     [.] highcache::protocol::decode_request(highc
+     0.53%  highcache_server     [.] highcache::Connection::process_input()
+     0.47%  libc.so.6            [.] pthread_mutex_unlock
+     0.46%  highcache_server     [.] highcache::Connection::desired_events() c
+     0.45%  highcache_server     [.] highcache::Buffer::append(void const*, un
+     0.45%  highcache_server     [.] highcache::Connection::handle_writable()
+     0.42%  highcache_server     [.] highcache::CacheEngine::get(std::basic_st
+     0.36%  libc.so.6            [.] __errno_location
+     0.36%  libc.so.6            [.] 0x0000000000098579
+     0.35%  highcache_server     [.] highcache::protocol::(anonymous namespace
+     0.35%  highcache_server     [.] highcache::protocol::encode_response[abi:

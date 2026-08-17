@@ -29,7 +29,7 @@ Connection::Connection(UniqueFd socket, CacheEngine &engine,
 int Connection::fd() const noexcept { return socket_.get(); }
 
 bool Connection::handle_readable() {
-  std::array<char, read_chunk_size> bytes{};
+  std::array<char, read_chunk_size> bytes;
   while (!close_after_write_ && !close_immediately_) {
     const auto result = ::recv(fd(), bytes.data(), bytes.size(), 0);
     if (result > 0) {

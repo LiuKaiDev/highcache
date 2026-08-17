@@ -1,0 +1,292 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cpu-clock:u'
+# Event count (approx.): 18535353350
+#
+# Overhead  Command          Shared Object        Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             IPC   [IPC Coverage]
+# ........  ...............  ...................  .................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................  ....................
+#
+    25.45%  highcache_serve  libc.so.6            [.] 0x000000000018954a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             -      -
+            |
+            ---0x7d7df058954a
+               highcache::Connection::handle_readable()
+               0xffffffffffffffff
+
+    14.01%  highcache_serve  libc.so.6            [.] epoll_ctl                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -
+            |
+            ---epoll_ctl
+               highcache::(anonymous namespace)::Worker::run()
+               handle_connection_event (inlined)
+               run (inlined)
+               0x7d7df08ecdb3
+               0x7d7df049caa3
+               0x7d7df0529c6b
+
+    13.19%  highcache_serve  libc.so.6            [.] recv                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           -      -
+            |
+            ---recv
+               highcache::Connection::handle_readable()
+               highcache::Connection::handle_readable()
+               0xffffffffffffffff
+
+     8.72%  highcache_serve  libc.so.6            [.] __send                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---__send
+               highcache::Connection::handle_writable()
+               highcache::(anonymous namespace)::Worker::run()
+               run (inlined)
+               0x7d7df08ecdb3
+               0x7d7df049caa3
+               0x7d7df0529c6b
+
+     6.54%  highcache_serve  highcache_server     [.] std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)  -      -
+            |
+            |--3.60%--std::__detail::_Hashtable_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Hashtable_traits<true, false, true> >::_S_equals(unsigned long, std::__detail::_Hash_node_code_cache<true> const&) (inlined)
+            |          std::__detail::_Hashtable_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Hashtable_traits<true, false, true> >::_M_equals(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long, std::__detail::_Hash_node_value<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, true> const&) const (inlined)
+            |          std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_before_node(unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long) const (inlined)
+            |          std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_node(unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long) const (inlined)
+            |          std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+            |          std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+            |          std::unordered_map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, highcache::Cache::StoredEntry, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (inlined)
+            |          |
+            |          |--3.00%--highcache::Cache::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+            |          |          highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+            |          |          highcache::Connection::execute(highcache::protocol::Request const&)
+            |          |          highcache::Connection::process_input()
+            |          |          highcache::Connection::handle_readable()
+            |          |          0xffffffffffffffff
+            |          |
+            |           --0.60%--highcache::Cache::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+            |                     highcache::CacheShard::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+            |                     highcache::Connection::execute(highcache::protocol::Request const&)
+            |                     highcache::Connection::process_input()
+            |                     highcache::Connection::handle_readable()
+            |                     0xffffffffffffffff
+            |
+             --2.13%--std::__detail::_Mod_range_hashing::operator()(unsigned long, unsigned long) const (inlined)
+                       |
+                        --2.02%--std::__detail::_Hash_code_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::__detail::_Select1st, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, true>::_M_bucket_index(unsigned long, unsigned long) const (inlined)
+                                  std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_bucket_index(unsigned long) const (inlined)
+                                  std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+                                  std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+                                  std::unordered_map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, highcache::Cache::StoredEntry, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (inlined)
+                                  |
+                                  |--1.42%--highcache::Cache::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                                  |          highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                                  |          highcache::Connection::execute(highcache::protocol::Request const&)
+                                  |          highcache::Connection::process_input()
+                                  |          highcache::Connection::handle_readable()
+                                  |          0xffffffffffffffff
+                                  |
+                                   --0.60%--highcache::Cache::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+                                             highcache::CacheShard::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+                                             highcache::Connection::execute(highcache::protocol::Request const&)
+                                             highcache::Connection::process_input()
+                                             highcache::Connection::handle_readable()
+                                             0xffffffffffffffff
+
+     3.60%  highcache_serve  highcache_server     [.] highcache::(anonymous namespace)::Worker::run()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -      -
+            |
+             --2.72%--highcache::(anonymous namespace)::Worker::run()
+                       0x7d7df08ecdb3
+                       0x7d7df049caa3
+                       0x7d7df0529c6b
+
+     2.56%  highcache_serve  libstdc++.so.6.0.33  [.] std::__detail::_List_node_base::_M_transfer(std::__detail::_List_node_base*, std::__detail::_List_node_base*)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  -      -
+            |
+            ---std::__detail::_List_node_base::_M_transfer(std::__detail::_List_node_base*, std::__detail::_List_node_base*)
+               std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::_M_transfer(std::_List_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_List_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_List_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >) (inlined)
+               std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::splice(std::_List_const_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&&, std::_List_const_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >) (inlined)
+               std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::splice(std::_List_const_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__cxx11::list<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, std::_List_const_iterator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >) (inlined)
+               highcache::Cache::mark_mru(std::__detail::_Node_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, false, true>) (inlined)
+               |
+                --2.07%--highcache::Cache::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                          highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                          highcache::Connection::execute(highcache::protocol::Request const&)
+                          highcache::Connection::process_input()
+                          highcache::Connection::handle_readable()
+                          0xffffffffffffffff
+
+     1.96%  highcache_serve  libc.so.6            [.] 0x0000000000188a91                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             -      -
+            |
+            ---0x7d7df0588a91
+               |
+                --1.91%--std::char_traits<char>::copy(char*, char const*, unsigned long) (inlined)
+                          std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_copy(char*, char const*, unsigned long) (inlined)
+                          std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (inlined)
+                          std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long) (inlined)
+                          std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::assign(char const*, unsigned long) (inlined)
+                          highcache::Cache::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                          highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                          highcache::Connection::execute(highcache::protocol::Request const&)
+                          highcache::Connection::process_input()
+                          highcache::Connection::handle_readable()
+                          0xffffffffffffffff
+
+     1.91%  highcache_serve  highcache_server     [.] highcache::Connection::handle_readable()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       -      -
+            |
+            |--0.93%--highcache::Connection::handle_readable()
+            |          |
+            |           --0.65%--0xffffffffffffffff
+            |
+             --0.87%--highcache::Connection::should_close() const (inlined)
+                       highcache::Connection::handle_readable()
+                       0xffffffffffffffff
+
+     1.74%  highcache_serve  libc.so.6            [.] malloc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---malloc
+               operator new(unsigned long)
+               std::__new_allocator<char>::allocate(unsigned long, void const*) (inlined)
+               std::allocator<char>::allocate(unsigned long) (inlined)
+               std::allocator_traits<std::allocator<char> >::allocate(std::allocator<char>&, unsigned long) (inlined)
+               std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (inlined)
+               std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (inlined)
+               |
+                --1.09%--std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (inlined)
+                          std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long) (inlined)
+                          std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::assign(char const*, unsigned long) (inlined)
+                          |
+                           --0.87%--highcache::protocol::decode_request(highcache::Buffer&, highcache::protocol::Request&, highcache::protocol::ProtocolError&)
+                                     highcache::Connection::process_input()
+                                     highcache::Connection::handle_readable()
+                                     0xffffffffffffffff
+
+     1.47%  highcache_serve  libc.so.6            [.] pthread_mutex_lock                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             -      -
+            |
+            ---pthread_mutex_lock
+               |
+               |--0.93%--highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+               |          std::mutex::lock() (inlined)
+               |          std::lock_guard<std::mutex>::lock_guard(std::mutex&) (inlined)
+               |          highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+               |          highcache::Connection::execute(highcache::protocol::Request const&)
+               |          highcache::Connection::process_input()
+               |          highcache::Connection::handle_readable()
+               |          0xffffffffffffffff
+               |
+                --0.54%--highcache::CacheShard::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+                          std::mutex::lock() (inlined)
+                          std::lock_guard<std::mutex>::lock_guard(std::mutex&) (inlined)
+                          highcache::CacheShard::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+                          highcache::Connection::execute(highcache::protocol::Request const&)
+                          highcache::Connection::process_input()
+                          highcache::Connection::handle_readable()
+                          0xffffffffffffffff
+
+     1.14%  highcache_serve  highcache_server     [.] highcache::SlabAllocator::allocate(unsigned long)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              -      -
+            |
+             --0.76%--highcache::SlabAllocator::SlabClass::allocate() (inlined)
+                       highcache::SlabAllocator::allocate(unsigned long)
+                       highcache::SlabAllocator::allocate(unsigned long)
+                       highcache::CacheEntry::CacheEntry(highcache::ValueAllocator&, std::basic_string_view<char, std::char_traits<char> >) (inlined)
+                       highcache::Cache::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+                       highcache::CacheShard::set(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::chrono::duration<long, std::ratio<1l, 1000l> >)
+                       highcache::Connection::execute(highcache::protocol::Request const&)
+                       highcache::Connection::process_input()
+                       highcache::Connection::handle_readable()
+                       0xffffffffffffffff
+
+     1.14%  highcache_serve  libstdc++.so.6.0.33  [.] std::_Hash_bytes(void const*, unsigned long, unsigned long)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -
+            |
+            ---std::_Hash_bytes(void const*, unsigned long, unsigned long)
+               std::_Hash_impl::hash(void const*, unsigned long, unsigned long) (inlined)
+               |
+                --0.82%--std::hash<std::basic_string_view<char, std::char_traits<char> > >::operator()(std::basic_string_view<char, std::char_traits<char> > const&) const (inlined)
+                          highcache::CacheEngine::shard_for(std::basic_string_view<char, std::char_traits<char> >) (inlined)
+
+     1.09%  highcache_serve  libc.so.6            [.] epoll_wait                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -
+            |
+            ---epoll_wait
+               highcache::(anonymous namespace)::Worker::run()
+               0x7d7df08ecdb3
+               0x7d7df049caa3
+               0x7d7df0529c6b
+
+     0.87%  highcache_serve  highcache_server     [.] highcache::Buffer::retrieve(unsigned long)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -
+            |
+             --0.54%--highcache::Buffer::retrieve(unsigned long)
+                       highcache::Connection::handle_writable()
+                       highcache::(anonymous namespace)::Worker::run()
+                       run (inlined)
+                       0x7d7df08ecdb3
+                       0x7d7df049caa3
+                       0x7d7df0529c6b
+
+     0.82%  highcache_serve  highcache_server     [.] highcache::Buffer::append(void const*, unsigned long)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          -      -
+            |
+             --0.65%--char* std::__uninitialized_default_n_1<true>::__uninit_default_n<char*, unsigned long>(char*, unsigned long) (inlined)
+                       char* std::__uninitialized_default_n_1<true>::__uninit_default_n<char*, unsigned long>(char*, unsigned long) (inlined)
+                       char* std::__uninitialized_default_n<char*, unsigned long>(char*, unsigned long) (inlined)
+                       char* std::__uninitialized_default_n_a<char*, unsigned long, char>(char*, unsigned long, std::allocator<char>&) (inlined)
+                       std::vector<char, std::allocator<char> >::_M_default_append(unsigned long) (inlined)
+                       std::vector<char, std::allocator<char> >::resize(unsigned long) (inlined)
+                       highcache::Buffer::append(void const*, unsigned long)
+                       highcache::Buffer::append(void const*, unsigned long)
+                       highcache::Connection::handle_readable()
+                       0xffffffffffffffff
+
+     0.82%  highcache_serve  libc.so.6            [.] 0x0000000000188619                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             -      -
+            |
+            ---0x7d7df0588619
+               std::char_traits<char>::compare(char const*, char const*, unsigned long) (inlined)
+               bool std::operator==<char, std::char_traits<char>, std::allocator<char> >(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (inlined)
+               std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::operator()(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const (inlined)
+               std::__detail::_Hashtable_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Hashtable_traits<true, false, true> >::_M_key_equals(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__detail::_Hash_node_value<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, true> const&) const (inlined)
+               std::__detail::_Hashtable_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Hashtable_traits<true, false, true> >::_M_equals(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long, std::__detail::_Hash_node_value<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, true> const&) const (inlined)
+               std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_before_node(unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long) const (inlined)
+               std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::_M_find_node(unsigned long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long) const (inlined)
+               std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+               std::_Hashtable<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry>, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> >, std::__detail::_Select1st, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, false, true> >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+               std::unordered_map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, highcache::Cache::StoredEntry, std::hash<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::equal_to<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, highcache::Cache::StoredEntry> > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (inlined)
+               |
+                --0.71%--highcache::Cache::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                          highcache::CacheShard::get(std::basic_string_view<char, std::char_traits<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+                          highcache::Connection::execute(highcache::protocol::Request const&)
+                          highcache::Connection::process_input()
+                          highcache::Connection::handle_readable()
+                          0xffffffffffffffff
+
+     0.76%  highcache_serve  highcache_server     [.] highcache::Buffer::empty() const                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               -      -
+            |
+             --0.60%--std::vector<char, std::allocator<char> >::size() const (inlined)
+                       highcache::Buffer::readable_bytes() const (inlined)
+                       highcache::Buffer::empty() const
+                       |
+                        --0.54%--highcache::Connection::handle_writable()
+                                  highcache::(anonymous namespace)::Worker::run()
+                                  run (inlined)
+                                  0x7d7df08ecdb3
+                                  0x7d7df049caa3
+                                  0x7d7df0529c6b
+
+     0.76%  highcache_serve  highcache_server     [.] highcache::protocol::(anonymous namespace)::append_u32(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned int)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+     0.76%  highcache_serve  libc.so.6            [.] cfree                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          -      -
+            |
+            ---cfree
+               std::__new_allocator<char>::deallocate(char*, unsigned long) (inlined)
+               std::allocator<char>::deallocate(char*, unsigned long) (inlined)
+               std::allocator_traits<std::allocator<char> >::deallocate(std::allocator<char>&, char*, unsigned long) (inlined)
+               std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_destroy(unsigned long) (inlined)
+               std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_dispose() (inlined)
+               std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::~basic_string() (inlined)
+
+     0.71%  highcache_serve  highcache_server     [.] highcache::protocol::decode_request(highcache::Buffer&, highcache::protocol::Request&, highcache::protocol::ProtocolError&)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -
+     0.65%  highcache_serve  highcache_server     [.] highcache::Buffer::append(std::basic_string_view<char, std::char_traits<char> >)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               -      -
+     0.65%  highcache_serve  highcache_server     [.] highcache::Connection::handle_writable()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       -      -
+            |
+            ---highcache::Connection::handle_writable()
+               highcache::(anonymous namespace)::Worker::run()
+               run (inlined)
+               0x7d7df08ecdb3
+               0x7d7df049caa3
+               0x7d7df0529c6b
+
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#
