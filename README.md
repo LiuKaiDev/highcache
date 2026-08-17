@@ -4,7 +4,7 @@ HighCache is a C++20/Linux project that will evolve into a high-performance mult
 
 ## Current status
 
-**Phase 0 project infrastructure is complete.**
+**Phase 1 single-threaded cache core is complete.**
 
 The current implementation provides:
 
@@ -15,10 +15,24 @@ The current implementation provides:
 - typed errors with stable error codes
 - thread-safe, level-filtered stream logging
 - strict `key=value` configuration loading
+- single-threaded `std::unordered_map` cache storage
+- SET, GET, and DELETE-equivalent operations
+- explicit cache result statuses and key/value validation
+- deterministic randomized cache correctness coverage
 - minimal `highcache_server` startup executable
 - unit tests and a server smoke test
 
-It intentionally does **not** implement a cache, commands, LRU, TTL, timing wheels, sharding, slab allocation, networking, a protocol, or benchmarks.
+It intentionally does **not** implement LRU or memory-capacity eviction, TTL, timing wheels, sharding or concurrency, slab allocation, networking, a protocol, or benchmarks.
+
+## Cache core
+
+`highcache::Cache` provides `set`, `get`, and `erase` operations with expected average O(1) behavior from `std::unordered_map`. Keys and values are copied into cache-owned `std::string` storage.
+
+Cache operations return `CacheStatus` values instead of throwing for normal outcomes. Successful inserts and overwrites return `ok`; missing GET and DELETE operations return `not_found`. Invalid requests return `invalid_key`, `key_too_large`, or `value_too_large`. A failed GET leaves its output string unchanged.
+
+Empty keys are invalid and empty values are supported. Keys may contain at most 250 bytes and values at most 1 MiB. These limits provide explicit, practical guardrails for the normal-allocation baseline and are not coupled to a network protocol.
+
+The cache tests cover insertion, lookup, deletion, overwrites, ownership, boundary validation, independent state, and 100,000 fixed-seed randomized SET/GET/DELETE operations against a reference model. This is correctness testing, not a benchmark.
 
 ## Configuration
 
@@ -28,7 +42,7 @@ The server uses `info` logging by default. Pass an optional configuration file t
 ./build/highcache_server config/highcache.conf.example
 ```
 
-Phase 0 configuration accepts one setting. Blank lines and lines beginning with `#` are ignored.
+Configuration accepts one setting. Blank lines and lines beginning with `#` are ignored.
 
 ```ini
 log_level=debug

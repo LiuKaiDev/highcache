@@ -24,6 +24,7 @@ highcache_enable_warnings(highcache_project_options)
 highcache_enable_sanitizers(highcache_project_options)
 
 add_library(highcache_core
+    src/cache/cache.cpp
     src/common/error.cpp
     src/config/config.cpp
     src/logging/logger.cpp
