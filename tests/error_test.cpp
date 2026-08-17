@@ -16,6 +16,7 @@ TEST(ErrorTest, ProvidesStableCodeNames) {
   EXPECT_EQ(to_string(ErrorCode::invalid_argument), "invalid_argument");
   EXPECT_EQ(to_string(ErrorCode::config_io), "config_io");
   EXPECT_EQ(to_string(ErrorCode::config_parse), "config_parse");
+  EXPECT_EQ(to_string(ErrorCode::network), "network");
 }
 
 } // namespace

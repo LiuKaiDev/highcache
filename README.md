@@ -4,7 +4,7 @@ HighCache is a C++20/Linux project that will evolve into a high-performance mult
 
 ## Current status
 
-**Phase 5 - Slab Allocator is complete.**
+**Phase 6 - epoll Network Server is complete.**
 
 The current implementation provides:
 
@@ -27,11 +27,16 @@ The current implementation provides:
 - cache-local hit, miss, eviction, and expiration counters
 - per-shard slab allocation for cached value bytes
 - allocator reservation, usage, reuse, and fragmentation metrics
+- Linux nonblocking TCP serving with one acceptor and configurable workers
+- level-triggered `epoll` event loops with `eventfd` connection handoff
+- a versioned, big-endian binary protocol for GET, SET, and DELETE
+- partial read/write, fragmented frame, pipelining, and output backpressure handling
+- server-owned TTL advancement through one monotonic `timerfd`
 - deterministic randomized cache correctness coverage
-- minimal `highcache_server` startup executable
-- unit tests and a server smoke test
+- real `highcache_server` and a small `highcache_client` command-line client
+- unit, socket, and loopback TCP integration tests
 
-It intentionally does **not** implement networking, a protocol, or benchmarks.
+It intentionally does **not** implement Phase 7 benchmark or performance work.
 
 ## Cache core
 
@@ -78,7 +83,7 @@ cache.set("temporary", "value", std::chrono::milliseconds{1500});
 
 A zero TTL creates a persistent entry. A positive TTL expires after the requested duration rounded upward to the next one-second tick, so a positive sub-second TTL lasts until the first tick. A negative TTL returns `invalid_ttl` without changing the entry, its LRU position, accounting, generation, or existing expiration.
 
-Phase 3 has no clock or background thread. Each explicit `cache.tick()` call advances logical cache time by exactly one second and processes the next slot of a 60-slot single-level Timing Wheel. Long TTLs use rotation rounds, with a timer placed at `(current_slot + ticks) % 60` and carrying `(ticks - 1) / 60` remaining rounds.
+The cache core itself has no clock or background thread. Each explicit `cache.tick()` call advances logical cache time by exactly one second and processes the next slot of a 60-slot single-level Timing Wheel. When the Phase 6 TCP server is running, one `timerfd` in the acceptor event loop is the sole tick owner and calls `CacheEngine::tick()` once for every elapsed one-second interval. Workers never advance cache time. Long TTLs use rotation rounds, with a timer placed at `(current_slot + ticks) % 60` and carrying `(ticks - 1) / 60` remaining rounds.
 
 Each successful SET assigns a cache-wide monotonically increasing generation. A timer owns only its key, scheduled generation, and remaining rounds; it never references a cache entry. Missing keys and generation mismatches make old timers harmless after overwrite, DELETE, or LRU eviction and reinsertion.
 
@@ -94,23 +99,36 @@ Total capacity is divided with `base = total / shard_count`; the first `total % 
 
 Engine cache and allocator statistics visit shards sequentially and lock one shard at a time. They are race-free but represent a moving aggregate under concurrent mutation, not an atomic snapshot across all shards. `CacheEngine::tick()` similarly advances each shard exactly once under its own lock. There is still no background timer thread.
 
-The tests cover insertion, lookup, deletion, overwrites, ownership, binary values, size-class boundaries, alignment, multi-slab growth, deterministic block reuse, exact allocator metrics, large-object fallback, LRU and TTL release paths, stale timers, shard routing, shared-key contention, and concurrent metrics. Fixed-seed correctness scenarios include single-threaded reference models, a 100,000-operation concurrent mixed cache workload, and a bounded-live-set 1,000,000-operation allocator stress test. These are correctness tests, not benchmarks, and no allocator performance claim is made.
+The tests cover insertion, lookup, deletion, overwrites, ownership, binary values, size-class boundaries, alignment, multi-slab growth, deterministic block reuse, exact allocator metrics, large-object fallback, LRU and TTL release paths, stale timers, shard routing, shared-key contention, and concurrent metrics. Network coverage includes fragmented and pipelined frames, malformed input, forced partial writes, peer disconnects, shared-cache visibility across workers, TTL expiry, clean shutdown, and 128 simultaneous loopback clients. Fixed-seed correctness scenarios include single-threaded reference models, a 100,000-operation concurrent mixed cache workload, and a bounded-live-set 1,000,000-operation allocator stress test. These are correctness tests, not benchmarks, and no performance claim is made.
+
+## Network server
+
+The Linux server has one acceptor thread and a configurable number of worker event loops. The acceptor drains `accept4()` until `EAGAIN`, assigns each new nonblocking socket round-robin, places its move-only descriptor in the selected worker's mutex-protected queue, and wakes that worker through `eventfd`. The worker registers and exclusively owns the connection from then on.
+
+Each worker has its own level-triggered `epoll` descriptor, wakeup descriptor, connection map, and thread. All workers call the same thread-safe, sharded `CacheEngine`; there is no network-wide cache lock and no per-worker cache copy. `EPOLLOUT` is enabled only while a connection has queued output. A stop event wakes the acceptor, which is joined before the workers are stopped and joined, so no thread is detached.
+
+Connections retain incomplete input and unsent output between events. Reads and writes continue through partial progress and `EINTR`, then stop at `EAGAIN`. Complete pipelined requests are handled in order. Pending output is limited to 4 MiB per connection; a response that would exceed the limit closes that connection. File descriptors use move-only RAII ownership and close-on-exec.
+
+The binary protocol uses fixed-width, explicitly encoded big-endian headers and preserves request IDs across pipelined operations. Values are length-delimited and remain binary-safe through the protocol, cache, and Slab-backed storage. See [docs/protocol.md](docs/protocol.md) for the complete wire format and error policy.
 
 ## Configuration
 
-The server uses `info` logging by default. Pass an optional configuration file to change the level:
+The server listens on `127.0.0.1:11211` with four workers and `info` logging by default. Pass an optional configuration file to override those settings:
 
 ```bash
 ./build/highcache_server config/highcache.conf.example
 ```
 
-Configuration accepts one setting. Blank lines and lines beginning with `#` are ignored.
+Blank lines and lines beginning with `#` are ignored.
 
 ```ini
 log_level=debug
+host=127.0.0.1
+port=11211
+worker_threads=4
 ```
 
-Supported levels are `debug`, `info`, `warning`, and `error`. Unknown keys, duplicate keys, malformed lines, and unsupported levels are reported as configuration errors.
+Supported levels are `debug`, `info`, `warning`, and `error`. `host` must be a nonempty IPv4 address, `port` must be from 0 through 65535, and `worker_threads` must be from 1 through 1024. Port 0 requests an OS-assigned ephemeral port, which is useful for tests. Unknown keys, duplicate keys, malformed lines, unsupported levels, and invalid numeric values are reported as configuration errors.
 
 ## Build
 
@@ -118,8 +136,18 @@ Supported levels are `debug`, `info`, `warning`, and `error`. Unknown keys, dupl
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 ctest --test-dir build --output-on-failure
-./build/highcache_server
+./build/highcache_server config/highcache.conf.example
 ```
+
+The server logs its actual listen address and port, then runs until `SIGINT` or `SIGTERM`. In another terminal, use the included client for basic operations:
+
+```bash
+./build/highcache_client 127.0.0.1 11211 set greeting hello 5000
+./build/highcache_client 127.0.0.1 11211 get greeting
+./build/highcache_client 127.0.0.1 11211 delete greeting
+```
+
+The client prints the wire status followed by a response body when present. It is a functional verification tool, not a load generator or benchmark.
 
 ## Sanitizer build
 
@@ -129,7 +157,6 @@ cmake -S . -B build-asan \
   -DHIGHCACHE_ENABLE_SANITIZERS=ON
 cmake --build build-asan -j
 ctest --test-dir build-asan --output-on-failure
-./build-asan/highcache_server
 ```
 
 AddressSanitizer/UndefinedBehaviorSanitizer and ThreadSanitizer are intentionally separate modes. To build with ThreadSanitizer:

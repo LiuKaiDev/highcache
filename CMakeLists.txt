@@ -7,6 +7,10 @@ project(
     LANGUAGES CXX
 )
 
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(FATAL_ERROR "HighCache Phase 6 requires Linux")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -33,6 +37,10 @@ add_library(highcache_core
     src/config/config.cpp
     src/logging/logger.cpp
     src/memory/slab_allocator.cpp
+    src/net/buffer.cpp
+    src/net/cache_server.cpp
+    src/net/connection.cpp
+    src/protocol/protocol_codec.cpp
     src/timer/timing_wheel.cpp
 )
 target_include_directories(highcache_core PUBLIC
@@ -47,6 +55,11 @@ add_executable(highcache_server
     src/server/main.cpp
 )
 target_link_libraries(highcache_server PRIVATE highcache_core)
+
+add_executable(highcache_client
+    src/client/main.cpp
+)
+target_link_libraries(highcache_client PRIVATE highcache_core)
 
 include(CTest)
 if(BUILD_TESTING)

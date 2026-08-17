@@ -10,6 +10,7 @@ enum class ErrorCode {
   invalid_argument,
   config_io,
   config_parse,
+  network,
 };
 
 [[nodiscard]] std::string_view to_string(ErrorCode code) noexcept;

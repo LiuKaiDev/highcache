@@ -12,6 +12,8 @@ std::string_view to_string(const ErrorCode code) noexcept {
     return "config_io";
   case ErrorCode::config_parse:
     return "config_parse";
+  case ErrorCode::network:
+    return "network";
   }
 
   return "unknown";

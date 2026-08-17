@@ -15,14 +15,21 @@ TEST(ConfigTest, UsesInfoLoggingByDefault) {
   const Config config;
 
   EXPECT_EQ(config.log_level(), LogLevel::info);
+  EXPECT_EQ(config.host(), "127.0.0.1");
+  EXPECT_EQ(config.port(), 11211U);
+  EXPECT_EQ(config.worker_threads(), 4U);
 }
 
 TEST(ConfigTest, ParsesWhitespaceAndComments) {
-  std::istringstream input("\n  # HighCache settings\n log_level = debug \n");
+  std::istringstream input("\n  # HighCache settings\n log_level = debug \n"
+                           " host = 0.0.0.0\n port = 0\n worker_threads = 8\n");
 
   const auto config = Config::from_stream(input, "test.conf");
 
   EXPECT_EQ(config.log_level(), LogLevel::debug);
+  EXPECT_EQ(config.host(), "0.0.0.0");
+  EXPECT_EQ(config.port(), 0U);
+  EXPECT_EQ(config.worker_threads(), 8U);
 }
 
 TEST(ConfigTest, LoadsConfigurationFromFile) {
@@ -54,7 +61,7 @@ TEST(ConfigTest, RejectsMalformedLines) {
 }
 
 TEST(ConfigTest, RejectsUnknownKeys) {
-  std::istringstream input("port=8080\n");
+  std::istringstream input("unknown=8080\n");
 
   EXPECT_THROW(static_cast<void>(Config::from_stream(input)), HighCacheError);
 }
@@ -73,6 +80,16 @@ TEST(ConfigTest, RejectsInvalidLogLevel) {
     FAIL() << "expected HighCacheError";
   } catch (const HighCacheError &error) {
     EXPECT_EQ(error.code(), ErrorCode::config_parse);
+  }
+}
+
+TEST(ConfigTest, RejectsInvalidNetworkNumbersAndZeroWorkers) {
+  for (const auto *const content :
+       {"port=-1\n", "port=65536\n", "port=text\n", "worker_threads=0\n",
+        "worker_threads=1025\n"}) {
+    std::istringstream input(content);
+    EXPECT_THROW(static_cast<void>(Config::from_stream(input)), HighCacheError)
+        << content;
   }
 }
 

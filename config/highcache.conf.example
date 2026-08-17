@@ -1,2 +1,8 @@
-# Phase 0 supports debug, info, warning, and error.
+# Logging supports debug, info, warning, and error.
 log_level=info
+
+# Phase 6 accepts an IPv4 address, a TCP port (0 selects an ephemeral port),
+# and a positive worker count up to 1024.
+host=127.0.0.1
+port=11211
+worker_threads=4

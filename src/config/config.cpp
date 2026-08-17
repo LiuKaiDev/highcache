@@ -2,8 +2,11 @@
 
 #include "highcache/common/error.h"
 
+#include <charconv>
+#include <cstdint>
 #include <fstream>
 #include <istream>
+#include <limits>
 #include <string>
 
 namespace highcache {
@@ -29,6 +32,17 @@ std::string_view trim(const std::string_view value) {
                            std::string(detail));
 }
 
+std::uint64_t parse_unsigned(const std::string_view value) {
+  std::uint64_t parsed = 0;
+  const auto [end, error] =
+      std::from_chars(value.data(), value.data() + value.size(), parsed);
+  if (error != std::errc{} || end != value.data() + value.size()) {
+    throw HighCacheError(ErrorCode::invalid_argument,
+                         "expected an unsigned decimal integer");
+  }
+  return parsed;
+}
+
 } // namespace
 
 Config::Config(const LogLevel log_level) noexcept : log_level_(log_level) {}
@@ -47,6 +61,9 @@ Config Config::from_stream(std::istream &input,
                            const std::string_view source_name) {
   Config config;
   bool has_log_level = false;
+  bool has_host = false;
+  bool has_port = false;
+  bool has_worker_threads = false;
   std::string line;
   std::size_t line_number = 0;
 
@@ -69,22 +86,73 @@ Config Config::from_stream(std::istream &input,
                         "key and value must not be empty");
     }
 
-    if (key != "log_level") {
-      throw_parse_error(source_name, line_number,
-                        "unknown configuration key: " + std::string(key));
-    }
-    if (has_log_level) {
-      throw_parse_error(source_name, line_number,
-                        "duplicate configuration key: log_level");
+    if (key == "log_level") {
+      if (has_log_level) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: log_level");
+      }
+      try {
+        config.log_level_ = parse_log_level(value);
+      } catch (const HighCacheError &) {
+        throw_parse_error(source_name, line_number,
+                          "invalid log_level: " + std::string(value));
+      }
+      has_log_level = true;
+      continue;
     }
 
-    try {
-      config.log_level_ = parse_log_level(value);
-    } catch (const HighCacheError &) {
-      throw_parse_error(source_name, line_number,
-                        "invalid log_level: " + std::string(value));
+    if (key == "host") {
+      if (has_host) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: host");
+      }
+      config.host_ = value;
+      has_host = true;
+      continue;
     }
-    has_log_level = true;
+
+    if (key == "port") {
+      if (has_port) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: port");
+      }
+      try {
+        const auto parsed = parse_unsigned(value);
+        if (parsed > std::numeric_limits<std::uint16_t>::max()) {
+          throw HighCacheError(ErrorCode::invalid_argument,
+                               "port exceeds uint16 range");
+        }
+        config.port_ = static_cast<std::uint16_t>(parsed);
+      } catch (const HighCacheError &) {
+        throw_parse_error(source_name, line_number,
+                          "invalid port: " + std::string(value));
+      }
+      has_port = true;
+      continue;
+    }
+
+    if (key == "worker_threads") {
+      if (has_worker_threads) {
+        throw_parse_error(source_name, line_number,
+                          "duplicate configuration key: worker_threads");
+      }
+      try {
+        const auto parsed = parse_unsigned(value);
+        if (parsed == 0 || parsed > 1024) {
+          throw HighCacheError(ErrorCode::invalid_argument,
+                               "worker count outside supported range");
+        }
+        config.worker_threads_ = static_cast<std::size_t>(parsed);
+      } catch (const HighCacheError &) {
+        throw_parse_error(source_name, line_number,
+                          "invalid worker_threads: " + std::string(value));
+      }
+      has_worker_threads = true;
+      continue;
+    }
+
+    throw_parse_error(source_name, line_number,
+                      "unknown configuration key: " + std::string(key));
   }
 
   if (input.bad()) {
@@ -97,5 +165,11 @@ Config Config::from_stream(std::istream &input,
 }
 
 LogLevel Config::log_level() const noexcept { return log_level_; }
+
+const std::string &Config::host() const noexcept { return host_; }
+
+std::uint16_t Config::port() const noexcept { return port_; }
+
+std::size_t Config::worker_threads() const noexcept { return worker_threads_; }
 
 } // namespace highcache
