@@ -1,4 +1,4 @@
-# Phase 7 Benchmark and Profiling
+# Benchmark and Profiling
 
 Phase 7 uses real measurements from the TCP path:
 
@@ -118,6 +118,9 @@ measured speed advantage. Slab also reserves more memory because each of 64
 shards owns at least one 1 MiB backing slab. The apparent 4096-byte Slab gain is
 only one exploratory repetition and is not treated as a performance claim.
 
+The Slab allocator is an implemented allocator-engineering experiment, but this
+workload did not demonstrate a throughput advantage over the system allocator.
+
 ## Shard Count
 
 Workload B, 256-byte values, and Slab allocation were held fixed:
@@ -148,9 +151,11 @@ remain at 128:
 | 4 | 186072.217 | 678.359 | 579.499 | 1262.803 | 2182.907 | 370.067 |
 | 8 | 162858.403 | 770.267 | 607.296 | 1791.689 | 3651.177 | 347.681 |
 
-Scaling peaks at four client threads, matching the server worker count. Eight
-client threads regress because client and server share only eight logical CPUs.
-Sixteen client threads were omitted to avoid further oversubscription.
+Scaling peaks at four client threads in this environment. The client and server
+share eight logical CPUs, and WSL scheduling may also affect the curve, but the
+experiment did not establish either as the cause of the eight-thread
+regression. Sixteen client threads were omitted to avoid additional shared-host
+load.
 
 ## perf Findings
 
@@ -246,6 +251,16 @@ routine disappeared; the new leaders were `epoll_ctl` at 20.25%, `recv` at
 `benchmark/results/phase7_perf_report_after.txt`.
 
 ## Reproduction
+
+For a practical one-command representative run using the retained Release
+binaries and fixed mixed-workload defaults:
+
+```bash
+./scripts/run_benchmark.sh
+```
+
+That quick entry point is separate from the full measurement matrix below and
+does not append to the committed Phase 7 CSV.
 
 ```bash
 cmake -E remove_directory build-release

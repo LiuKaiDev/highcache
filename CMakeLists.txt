@@ -8,7 +8,7 @@ project(
 )
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    message(FATAL_ERROR "HighCache Phase 6 requires Linux")
+    message(FATAL_ERROR "HighCache requires Linux")
 endif()
 
 set(CMAKE_CXX_STANDARD 20)

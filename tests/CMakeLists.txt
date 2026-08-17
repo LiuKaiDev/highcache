@@ -44,3 +44,12 @@ include(GoogleTest)
 gtest_discover_tests(highcache_tests)
 
 add_test(NAME highcache_server_smoke COMMAND $<TARGET_FILE:highcache_server> --help)
+
+find_program(HIGHCACHE_BASH_EXECUTABLE bash REQUIRED)
+add_test(
+    NAME highcache_reproducibility_scripts
+    COMMAND
+        "${HIGHCACHE_BASH_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/reproducibility_scripts_test.sh"
+        "${CMAKE_SOURCE_DIR}"
+)
