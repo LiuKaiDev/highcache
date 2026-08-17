@@ -1,0 +1,2 @@
+# Phase 0 supports debug, info, warning, and error.
+log_level=info

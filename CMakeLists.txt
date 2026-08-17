@@ -12,7 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(HIGHCACHE_BUILD_TESTS "Build HighCache tests" ON)
 option(HIGHCACHE_ENABLE_SANITIZERS "Enable ASan and UBSan in supported debug builds" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -24,13 +23,22 @@ target_compile_features(highcache_project_options INTERFACE cxx_std_20)
 highcache_enable_warnings(highcache_project_options)
 highcache_enable_sanitizers(highcache_project_options)
 
+add_library(highcache_core
+    src/common/error.cpp
+    src/config/config.cpp
+    src/logging/logger.cpp
+)
+target_include_directories(highcache_core PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+)
+target_link_libraries(highcache_core PUBLIC highcache_project_options)
+
 add_executable(highcache_server
     src/server/main.cpp
 )
-target_link_libraries(highcache_server PRIVATE highcache_project_options)
+target_link_libraries(highcache_server PRIVATE highcache_core)
 
-if(HIGHCACHE_BUILD_TESTS)
-    include(CTest)
-    enable_testing()
+include(CTest)
+if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()

@@ -17,13 +17,17 @@ if(NOT GTest_FOUND)
 endif()
 
 add_executable(highcache_tests
-    bootstrap_test.cpp
+    config_test.cpp
+    error_test.cpp
+    logger_test.cpp
 )
 
 target_link_libraries(highcache_tests PRIVATE
-    highcache_project_options
+    highcache_core
     GTest::gtest_main
 )
 
 include(GoogleTest)
 gtest_discover_tests(highcache_tests)
+
+add_test(NAME highcache_server_smoke COMMAND $<TARGET_FILE:highcache_server>)
