@@ -13,10 +13,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(HIGHCACHE_ENABLE_SANITIZERS "Enable ASan and UBSan in supported debug builds" OFF)
+option(HIGHCACHE_ENABLE_TSAN "Enable ThreadSanitizer in supported debug builds" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CompilerWarnings)
 include(Sanitizers)
+find_package(Threads REQUIRED)
 
 add_library(highcache_project_options INTERFACE)
 target_compile_features(highcache_project_options INTERFACE cxx_std_20)
@@ -25,6 +27,8 @@ highcache_enable_sanitizers(highcache_project_options)
 
 add_library(highcache_core
     src/cache/cache.cpp
+    src/cache/cache_engine.cpp
+    src/cache/cache_shard.cpp
     src/common/error.cpp
     src/config/config.cpp
     src/logging/logger.cpp
@@ -33,7 +37,10 @@ add_library(highcache_core
 target_include_directories(highcache_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
 )
-target_link_libraries(highcache_core PUBLIC highcache_project_options)
+target_link_libraries(highcache_core PUBLIC
+    highcache_project_options
+    Threads::Threads
+)
 
 add_executable(highcache_server
     src/server/main.cpp

@@ -4,18 +4,20 @@ HighCache is a C++20/Linux project that will evolve into a high-performance mult
 
 ## Current status
 
-**Phase 3 - TTL + Timing Wheel is complete.**
+**Phase 4 - Cache Sharding is complete.**
 
 The current implementation provides:
 
 - C++20 CMake project
 - `-Wall -Wextra -Wpedantic` on GCC and Clang
 - optional AddressSanitizer and UndefinedBehaviorSanitizer instrumentation
+- optional standalone ThreadSanitizer instrumentation
 - GoogleTest integration with a pinned fallback release
 - typed errors with stable error codes
 - thread-safe, level-filtered stream logging
 - strict `key=value` configuration loading
-- single-threaded `std::unordered_map` cache storage
+- single-threaded shard-local `std::unordered_map` cache storage
+- thread-safe hash-routed `CacheEngine` with 64 shards by default
 - SET, GET, and DELETE-equivalent operations
 - explicit cache result statuses and key/value validation
 - configurable logical memory capacity and automatic LRU eviction
@@ -27,7 +29,7 @@ The current implementation provides:
 - minimal `highcache_server` startup executable
 - unit tests and a server smoke test
 
-It intentionally does **not** implement concurrency or sharding, slab allocation, networking, a protocol, or benchmarks.
+It intentionally does **not** implement slab allocation, networking, a protocol, or benchmarks.
 
 ## Cache core
 
@@ -58,7 +60,17 @@ Each successful SET assigns a cache-wide monotonically increasing generation. A 
 
 A current timer removes the entry from storage and the LRU list, releases its logical memory charge, and increments `expired_count()`. Timing Wheel nodes and duplicated timer keys are excluded from `memory_usage_bytes()`, which remains the deterministic `key.size() + value.size()` cache-entry charge rather than process RSS or total metadata memory.
 
-The cache tests cover insertion, lookup, deletion, overwrites, ownership, boundaries, LRU ordering, accounting, state preservation, TTL boundaries and rounds, stale timers, and counters. Three fixed-seed reference-model scenarios each exercise 100,000 operations, including a mixed TTL correctness stress test. These are correctness tests, not benchmarks.
+## Sharding and thread safety
+
+`highcache::Cache` remains the unsynchronized, single-threaded core. Each `CacheShard` owns one `std::mutex` and one `Cache`; SET, GET, DELETE, tick, and local statistic reads all hold that shard's exclusive lock. GET cannot use a shared/read lock because a hit updates LRU recency.
+
+`highcache::CacheEngine` owns non-movable shards through `std::unique_ptr`, defaults to 64 shards, and accepts total logical capacity and shard count at construction. A zero shard count is rejected with `invalid_argument`. Each key is routed to exactly one shard with `std::hash<std::string_view>{}(key) % shard_count`, so ordinary key operations never take a global lock or more than one shard lock.
+
+Total capacity is divided with `base = total / shard_count`; the first `total % shard_count` shards receive one additional byte. Capacity and LRU are shard-local after partitioning. One shard may therefore evict entries while another still has unused capacity; Phase 4 does not rebalance memory or provide a global LRU.
+
+Engine statistics visit shards sequentially and lock one shard at a time. They are race-free but represent a moving aggregate under concurrent mutation, not an atomic snapshot across all shards. `CacheEngine::tick()` similarly advances each shard exactly once under its own lock. There is still no background timer thread.
+
+The cache tests cover insertion, lookup, deletion, overwrites, ownership, boundaries, LRU ordering, accounting, state preservation, TTL boundaries and rounds, stale timers, counters, shard routing, capacity partitioning, shared-key contention, and concurrent ticking. Fixed-seed correctness scenarios include single-threaded reference models and a 100,000-operation concurrent mixed workload. These are correctness tests, not benchmarks.
 
 ## Configuration
 
@@ -94,4 +106,14 @@ cmake -S . -B build-asan \
 cmake --build build-asan -j
 ctest --test-dir build-asan --output-on-failure
 ./build-asan/highcache_server
+```
+
+AddressSanitizer/UndefinedBehaviorSanitizer and ThreadSanitizer are intentionally separate modes. To build with ThreadSanitizer:
+
+```bash
+cmake -S . -B build-tsan \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DHIGHCACHE_ENABLE_TSAN=ON
+cmake --build build-tsan -j
+ctest --test-dir build-tsan --output-on-failure
 ```

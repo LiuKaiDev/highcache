@@ -17,6 +17,7 @@ if(NOT GTest_FOUND)
 endif()
 
 add_executable(highcache_tests
+    cache_engine_test.cpp
     cache_eviction_test.cpp
     cache_ttl_test.cpp
     cache_test.cpp

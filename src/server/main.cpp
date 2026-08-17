@@ -15,7 +15,7 @@ int main(const int argc, char *argv[]) {
     const auto config =
         argc == 2 ? highcache::Config::from_file(argv[1]) : highcache::Config{};
     highcache::Logger logger(config.log_level());
-    logger.info("HighCache server initialized (Phase 0)");
+    logger.info("HighCache initialized");
     return 0;
   } catch (const highcache::HighCacheError &error) {
     std::cerr << "highcache_server: " << highcache::to_string(error.code())
