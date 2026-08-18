@@ -12,8 +12,9 @@
 ## 每个 shard 独立维护 LRU
 
 LRU 元数据与 map、锁共用同一个 shard 边界。命中或 SET 只需持有一个 mutex 即可更新
-recency，淘汰也不需要全局协调锁。代价是全局行为近似：繁忙 shard 可能在另一 shard
-尚有空余时淘汰数据，系统不存在进程级的唯一最久未使用顺序。
+recency，淘汰也不需要全局协调锁。每个 shard 都有独立 LRU，不存在全局 LRU；容量不能
+跨 shard 借用，淘汰顺序仅在 shard 内成立，因此繁忙 shard 可能在其他 shard 尚有空余
+时淘汰数据。
 
 ## Shard 容量不做全局再平衡
 
@@ -74,12 +75,11 @@ level-triggered `epoll` 是清晰的非阻塞基线。handler 仍然把 accept�
 因漏掉 rearm 状态而停滞。仅在 output queue 非空时启用 `EPOLLOUT`，避免持续 writable
 通知。切换到 edge-triggered 或 one-shot 需要测量证据，也会增加状态复杂度。
 
-## 自定义二进制协议而非 RESP
+## 自定义二进制协议
 
-协议使用定宽、带版本 header，明确的大端编码，按长度界定的二进制 key/value，以及
-opaque request ID。这样可限制解析边界，并明确关联流水线响应。项目不是 Redis clone，
-所以没有实现 RESP 和 Redis 命令兼容；兼容语义应是独立产品目标，而不是内部 framing
-的简单替换。
+协议使用定宽、带版本 header，明确的大端序列化，按长度界定的二进制 key/value，以及
+opaque `request_id`。固定 header 和长度边界让解析与 framing 保持简单且有界，二进制
+安全 payload 可以原样承载任意字节，`request_id` 则支持流水线响应关联。
 
 ## 连接级背压
 

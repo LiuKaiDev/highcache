@@ -108,8 +108,8 @@ buffer 内的多个完整请求按顺序处理。
 
 总逻辑容量分配给各 shard：每个 shard 获得 `total / shard_count` 字节，前
 `total % shard_count` 个 shard 各多一个字节。每个 shard 独立维护 MRU 到 LRU 的顺序，
-SET 从所选 shard 的尾部淘汰，直至 item 可放入。系统没有全局 LRU 或跨 shard 借用，
-因此其他 shard 的空闲容量不能阻止热点 shard 淘汰。
+SET 从所选 shard 的尾部淘汰，直至 item 可放入。容量不能跨 shard 借用，淘汰顺序仅在
+shard 内成立，不提供全局 LRU；因此其他 shard 的空闲容量不能阻止热点 shard 淘汰。
 
 逻辑使用量只统计 key 与 value 字节。分配器指标另行报告 live value bytes、reserved
 backing、free block capacity、internal fragmentation 与 allocation counts。

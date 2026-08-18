@@ -2,13 +2,10 @@
 
 ## 项目简介
 
-HighCache 是一个面向 Linux 的 C++20 多线程内存键值缓存服务器。项目从缓存内核、
-内存管理、并发模型、网络事件循环到二进制协议形成了一条完整的数据通路，重点展示
-系统编程中的所有权、并发控制、资源边界和基于测量的优化，而不是复刻 Redis 或实现
-分布式缓存。
-
-HighCache 不是 Redis Clone，也不是分布式缓存系统。项目关注 C++、并发、内存管理、
-缓存算法、Linux 网络和性能工程。
+HighCache 是一个基于 C++20 与 Linux 实现的多线程内存 KV 缓存服务器。项目实现了
+Cache Sharding、LRU 容量淘汰、Timing Wheel TTL 管理、Slab Allocator、非阻塞
+`epoll` TCP Server 和自定义二进制协议，并通过真实 TCP Benchmark 与 perf 对并发模型、
+内存分配和网络路径进行性能分析与优化。
 
 ## 核心特性
 
@@ -258,14 +255,15 @@ config/      服务器示例配置
 ## 设计取舍
 
 项目选择 shard-local map、LRU、Timing Wheel 与 allocator，使一次 key 操作只需一把
-锁，并保持组件所有权清楚；相应代价是容量不能跨 shard 借用、全局 LRU 只是近似。
+锁，并保持组件所有权清楚；相应代价是容量不能跨 shard 借用，淘汰顺序仅在 shard 内
+成立，不提供全局 LRU。
 level-triggered `epoll` 让未排空工作可再次得到通知，代价是 readiness 触发更频繁。
 Slab 被保留用于 allocator 设计与实验比较，而不是因为测试结果证明它更快。
 
 ## 已知限制
 
-HighCache 只支持单节点内存存储，不提供复制、持久化、分布式路由或 Redis 兼容性；
-服务器仅支持 IPv4，TTL 分辨率为一秒。容量与 LRU 按 shard 隔离；统计值是无数据竞争
+当前部署模型是单节点内存存储，不包含复制、持久化或分布式路由；服务器仅支持 IPv4，
+TTL 分辨率为一秒。容量与 LRU 按 shard 隔离；统计值是无数据竞争
 的移动聚合，而非原子全局快照；单层 Timing Wheel 会保留只含 key 的过期旧事件，直到
 其计划槽被处理。性能结果受 WSL2、loopback 以及客户端与服务器共享 CPU 的约束。
 
