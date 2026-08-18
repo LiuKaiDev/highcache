@@ -139,7 +139,7 @@ SET 的可选 TTL 单位为毫秒。服务器持续运行至收到 `SIGINT` 或 
 ```
 
 脚本会自行启动并停止 `127.0.0.1:11211` 上的服务器，因此该端口必须空闲。完整的
-5400 万请求实验矩阵由 `scripts/run_phase7_benchmarks.sh` 保留，不作为默认快速入口。
+5400 万请求实验矩阵由 `scripts/run_benchmark_matrix.sh` 保留，不作为默认快速入口。
 
 ### 测试与 Sanitizer
 

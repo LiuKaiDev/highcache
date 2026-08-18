@@ -4,7 +4,7 @@ set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 build_dir=${HIGHCACHE_BUILD_DIR:-"${repo_root}/build-release"}
-results_file=${HIGHCACHE_RESULTS_FILE:-"${repo_root}/benchmark/results/phase7_results.csv"}
+results_file=${HIGHCACHE_RESULTS_FILE:-"${repo_root}/benchmark/results/benchmark_results.csv"}
 host=${HIGHCACHE_HOST:-127.0.0.1}
 port=${HIGHCACHE_PORT:-11211}
 server_workers=${HIGHCACHE_SERVER_WORKERS:-4}

@@ -39,7 +39,7 @@ key_space=${HIGHCACHE_KEY_SPACE:-100000}
 warmup_requests=${HIGHCACHE_WARMUP_REQUESTS:-10000}
 server="${build_dir}/highcache_server"
 benchmark="${build_dir}/highcache_benchmark"
-configuration="${repo_root}/benchmark/phase7_server.conf"
+configuration="${repo_root}/benchmark/benchmark_server.conf"
 temporary_dir=$(mktemp -d)
 server_pid=
 

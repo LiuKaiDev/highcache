@@ -7,7 +7,7 @@ highcache_benchmark -> TCP -> epoll server -> binary protocol -> CacheEngine
 ```
 
 性能测试不直接调用 `CacheEngine`。所有重复测量均保存在
-[`benchmark/results/phase7_results.csv`](../benchmark/results/phase7_results.csv)，没有删除
+[`benchmark/results/benchmark_results.csv`](../benchmark/results/benchmark_results.csv)，没有删除
 任何一次结果。
 
 ## 测试环境
@@ -148,22 +148,22 @@ QPS；32、64、128 的中位结果实际上都约为 163k。此机器上更多 
 以下是代表性命令，其中实际包路径缩写为 `perf`：
 
 ```bash
-./build-release/highcache_server benchmark/phase7_server.conf &
+./build-release/highcache_server benchmark/benchmark_server.conf &
 server_pid=$!
 server_tids=$(ls "/proc/${server_pid}/task" | paste -sd, -)
 
 perf stat --timeout 20000 \
   -e task-clock,cycles,instructions,branches,branch-misses,cache-references,cache-misses,context-switches,cpu-migrations \
-  -p "${server_pid}" -o benchmark/results/phase7_perf_stat.txt
+  -p "${server_pid}" -o benchmark/results/perf_stat_before.txt
 
 timeout -s INT 15 perf top --stdio --delay 5 --entries 30 \
   -F 99 -e cpu-clock:u -t "${server_tids}"
 
 timeout -s INT 15 perf record -F 99 -e cpu-clock:u -g \
   --call-graph dwarf,8192 -t "${server_tids}" \
-  -o /tmp/highcache-phase7-perf.data
+  -o /tmp/highcache-perf-before.data
 perf report --stdio --no-children --percent-limit 0.5 \
-  --sort comm,dso,symbol -i /tmp/highcache-phase7-perf.data
+  --sort comm,dso,symbol -i /tmp/highcache-perf-before.data
 ```
 
 每条命令都与一次真实的 300 万或 500 万请求负载 B 客户端运行重叠。`perf stat` 正常完成：
@@ -188,8 +188,8 @@ routine 占 25.79% 至 25.91%，`recv` 占 12.24% 至 13.89%，`epoll_ctl` 占
 
 优化前保存的 `perf record` 共捕获 1835 个样本，lost 为 0。主要条目为 libc routine
 25.45%、`epoll_ctl` 14.01%、`recv` 13.19%、`send` 8.72%、cache hash lookup
-6.54%。原始文本保存在 `benchmark/results/phase7_perf_stat.txt`、
-`phase7_perf_top.txt`、`phase7_perf_record.txt` 和 `phase7_perf_report.txt`；临时二进制
+6.54%。原始文本保存在 `benchmark/results/perf_stat_before.txt`、
+`perf_top_before.txt`、`perf_record_before.txt` 和 `perf_report_before.txt`；临时二进制
 `perf.data` 不提交到仓库。
 
 ## 瓶颈定位
@@ -219,7 +219,7 @@ routine 占 25.79% 至 25.91%，`recv` 占 12.24% 至 13.89%，`epoll_ctl` 占
 
 优化后 profile 捕获 968 个样本，lost 为 0。zero-fill routine 消失；新的主要条目为
 `epoll_ctl` 20.25%、`recv` 18.39%、`send` 10.02%、hash lookup 8.78%。确认结果
-保存在 `benchmark/results/phase7_perf_report_after.txt`。
+保存在 `benchmark/results/perf_report_after.txt`。
 
 ## 复现方式
 
@@ -237,8 +237,8 @@ cmake -S . -B build-release \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -g"
 cmake --build build-release -j
-./scripts/run_phase7_benchmarks.sh baseline
-HIGHCACHE_CODE_LABEL=after ./scripts/run_phase7_benchmarks.sh optimization
+./scripts/run_benchmark_matrix.sh baseline
+HIGHCACHE_CODE_LABEL=after ./scripts/run_benchmark_matrix.sh optimization
 ```
 
 runner 每次重复都会重启服务器，并记录完整结果、server CPU/RSS、logical bytes 和

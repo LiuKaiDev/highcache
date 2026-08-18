@@ -21,7 +21,7 @@
 ./scripts/run_benchmark.sh
 ```
 
-脚本使用 `benchmark/phase7_server.conf` 启动临时服务器，执行 100 万条计量请求：
+脚本使用 `benchmark/benchmark_server.conf` 启动临时服务器，执行 100 万条计量请求：
 80% GET / 20% SET、256 字节 value、100,000 个 key、4 个客户端线程、128 个连接、
 seed 12345，以及 10,000 条 warmup 请求，随后停止服务器。该次验证完成
 1,000,000 / 1,000,000 条成功请求，用时 5.137 秒，吞吐 194678.003 requests/sec。
