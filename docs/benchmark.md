@@ -1,108 +1,95 @@
-# Benchmark and Profiling
+# HighCache 性能测试与分析
 
-Phase 7 uses real measurements from the TCP path:
+所有性能结果都来自真实 TCP 数据路径：
 
 ```text
 highcache_benchmark -> TCP -> epoll server -> binary protocol -> CacheEngine
 ```
 
-Direct `CacheEngine` calls are not used for performance results. Raw repeated
-measurements are in
-[`benchmark/results/phase7_results.csv`](../benchmark/results/phase7_results.csv).
-No repetitions were removed.
+性能测试不直接调用 `CacheEngine`。所有重复测量均保存在
+[`benchmark/results/phase7_results.csv`](../benchmark/results/phase7_results.csv)，没有删除
+任何一次结果。
 
-## Environment
+## 测试环境
 
-Measurements were collected on 2026-08-18 in this environment:
+数据采集于 2026-08-18：
 
-| Item | Value |
+| 项目 | 配置 |
 |---|---|
 | CPU | Intel Core i5-8300H @ 2.30 GHz |
-| Topology | 1 socket, 4 physical cores, 2 threads/core, 8 logical CPUs |
-| RAM / swap | 7.7 GiB / 2.0 GiB |
-| Environment | WSL2, Microsoft hypervisor |
+| 拓扑 | 1 socket，4 个物理核心，2 threads/core，8 个逻辑 CPU |
+| 内存 / swap | 7.7 GiB / 2.0 GiB |
+| 环境 | WSL2，Microsoft hypervisor |
 | Kernel | `6.18.33.2-microsoft-standard-WSL2` |
-| Compiler | GCC 13.3.0 (`Ubuntu 13.3.0-6ubuntu2~24.04.1`) |
+| 编译器 | GCC 13.3.0（`Ubuntu 13.3.0-6ubuntu2~24.04.1`） |
 | CMake | 3.28.3 |
-| perf | 6.8.12 from Ubuntu `linux-tools-6.8.0-134` |
+| perf | Ubuntu `linux-tools-6.8.0-134` 提供的 6.8.12 |
 | Release flags | `-O3 -DNDEBUG -g -std=c++20 -Wall -Wextra -Wpedantic` |
-| Server | 4 workers, 1 GiB logical capacity, Slab unless varied |
-| Client | 8 threads, 128 connections, pipeline 1 unless varied |
-| Dataset | 100,000 uniform keys, seed 12345 |
-| Run | 1,000,000 measured requests and 10,000 warmup requests |
+| 服务器 | 4 workers，1 GiB 逻辑容量；除变量实验外使用 Slab |
+| 客户端 | 8 threads，128 connections；除变量实验外 pipeline 1 |
+| 数据集 | 100,000 个均匀分布 key，seed 12345 |
+| 单次运行 | 1,000,000 条计量请求，10,000 条 warmup 请求 |
 
-The 1 GiB logical capacity is deliberate: 100,000 values of 4096 bytes plus
-keys require about 411.7 MB. A 256 MiB cache would evict preload data and turn
-the value-size comparison into a miss-rate comparison.
+采用 1 GiB 逻辑容量是有意的控制变量：100,000 个 4096 字节 value 加 key 约需
+411.7 MB。若使用 256 MiB，预加载数据会被淘汰，value size 对比就会混入命中率差异。
 
-## Methodology
+## 测量方法
 
-The client precomputes uniformly selected keys and an exact GET/SET mix from a
-fixed seed. It generates one binary payload per invocation. Before measurement
-it connects all clients, preloads every key with SET, completes the preload,
-runs the unmeasured warmup, and resets client statistics. The one-million
-request count, duration, latency, throughput, and hit ratio exclude preload and
-warmup.
+客户端按固定 seed 预生成均匀 key 和精确 GET/SET 比例，每次调用只生成一份二进制
+payload。计时前先连接所有客户端，以 SET 预加载全部 key，等待预加载完成，再执行不计量
+的 warmup 并重置客户端统计。报告的请求数、duration、latency、throughput 和 hit ratio
+均不包含 preload 与 warmup。
 
-Each client thread owns one epoll loop and multiple nonblocking connections;
-there is no thread per connection or global client request mutex. Dispatch is
-timestamped with `std::chrono::steady_clock`. A latency observation ends only
-after the response is fully decoded and correlated by `request_id`. AVG uses
-all observed durations. P50, P95, and P99 use nearest-rank observations, not an
-estimate from AVG. Failed responses and transport failures remain in totals.
+每个客户端线程拥有一个 `epoll` loop 和多个 nonblocking connection，不采用一连接
+一线程，也没有全局请求 mutex。dispatch 使用 `std::chrono::steady_clock` 记录时间；
+只有在响应完整解码并按 `request_id` 关联后，才结束 latency 观测。AVG 使用所有观测值，
+P50、P95、P99 使用 nearest-rank 原始观测，不根据 AVG 估算。错误响应和传输失败保留
+在总数中。
 
-Primary points have three repetitions. Tables show the complete run whose QPS
-is the median of the three, so every latency and CPU value on a row comes from
-the same run. The 64, 1024, and 4096-byte allocator points are explicitly
-single-run exploratory checks; the 256-byte allocator comparison is repeated
-three times. Every measured request succeeded and every GET hit the preloaded
-dataset.
+主要测量点重复三次。表格展示三次中 QPS 为中位数的那次完整结果，因此同一行的 latency
+和 CPU 均来自同一次运行。64、1024、4096 字节的分配器结果明确是单次探索；256 字节
+分配器对比重复三次。所有计量请求均成功，所有 GET 均命中预加载数据集。
 
-Server CPU is `/proc/<pid>/stat` process CPU over the complete client
-invocation, including preload and warmup, divided by wall time. It may exceed
-100% because four server workers run concurrently. RSS is sampled after the
-measured run. RSS, logical cache bytes, and allocator-reserved bytes are
-different quantities.
+服务器 CPU 从 `/proc/<pid>/stat` 读取，覆盖完整客户端调用（包含 preload 与 warmup），
+再除以 wall time。四个 server worker 可并发运行，因此 CPU 可能超过 100%。RSS 在计量
+结束后采样。RSS、逻辑缓存字节和 allocator reserved bytes 是三种不同指标。
 
-## Workloads
+## 基准负载
 
-- A: 100% GET
-- B: 80% GET / 20% SET
-- C: 50% GET / 50% SET
+- A：100% GET
+- B：80% GET / 20% SET
+- C：50% GET / 50% SET
 
-Baseline medians use 256-byte values, 64 shards, and Slab allocation:
+基准中位数使用 256 字节 value、64 shards 和 Slab：
 
-| Workload | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU % | Hit ratio |
+| 负载 | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU % | Hit ratio |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | A | 166843.287 | 749.551 | 594.500 | 1693.402 | 3525.802 | 352.807 | 1.000 |
 | B | 161681.761 | 750.357 | 596.900 | 1666.600 | 3507.201 | 346.477 | 1.000 |
 | C | 162728.766 | 772.364 | 595.400 | 1792.901 | 3931.701 | 351.383 | 1.000 |
 
-Workload B repetitions ranged from 156332.875 to 163478.385 QPS; Workload C
-ranged from 156262.104 to 165451.892 QPS. This visible WSL/shared-CPU noise is
-why a single best run is not used.
+负载 B 的重复结果在 156332.875 至 163478.385 QPS 之间；负载 C 在 156262.104 至
+165451.892 QPS 之间。这个波动体现 WSL/共享 CPU 噪声，也是没有选择单次最好成绩的原因。
 
-## Global Lock vs Sharding
+## 全局锁基线与分片
 
-One shard is the natural global-lock baseline because every key takes the same
-`CacheShard` mutex. With Workload B and all other controls fixed:
+单 shard 是自然的全局锁基线，因为所有 key 都获取同一个 `CacheShard` mutex。固定负载
+B 及其他变量：
 
 | Shards | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU % |
 |---:|---:|---:|---:|---:|---:|---:|
 | 1 | 147405.814 | 850.884 | 739.100 | 1573.000 | 2533.200 | 346.100 |
 | 64 | 163020.720 | 774.789 | 601.902 | 1799.990 | 3957.815 | 350.322 |
 
-The 64-shard median has 10.593% higher QPS and lower AVG/P50, but materially
-higher P95/P99. The data supports a throughput benefit for sharding in this
-test, not a claim that it improves every latency measure.
+64 shards 的中位 QPS 提高 10.593%，AVG/P50 降低，但 P95/P99 明显升高。因此数据支持
+这一测试中分片具有吞吐收益，不支持它改善所有延迟指标的说法。
 
-## malloc/free vs Slab
+## `malloc/free` 与 Slab
 
-`allocator=system` and `allocator=slab` select `ValueAllocator` backends under
-the same cache, LRU, TTL, sharding, networking, protocol, and logical capacity
-behavior. Workload C supplies enough SET traffic to exercise allocation.
+`allocator=system` 和 `allocator=slab` 在同一 cache、LRU、TTL、sharding、networking、
+protocol 与逻辑容量规则下切换 `ValueAllocator` 后端。负载 C 提供足够 SET 以覆盖分配路径。
 
-| Backend | Bytes | Reps | QPS | AVG us | P50 us | P95 us | P99 us | RSS KiB | Reserved bytes |
+| 后端 | Bytes | Reps | QPS | AVG us | P50 us | P95 us | P99 us | RSS KiB | Reserved bytes |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | system | 64 | 1 | 158769.574 | 788.469 | 611.296 | 1828.707 | 3981.573 | 36264 | 6400000 |
 | Slab | 64 | 1 | 161293.119 | 776.016 | 599.102 | 1814.606 | 4062.614 | 94204 | 67108864 |
@@ -113,17 +100,15 @@ behavior. Workload C supplies enough SET traffic to exercise allocation.
 | system | 4096 | 1 | 135364.884 | 918.250 | 744.996 | 2003.808 | 3943.679 | 447764 | 409600000 |
 | Slab | 4096 | 1 | 142932.163 | 878.383 | 697.196 | 2013.989 | 3986.614 | 473120 | 452984832 |
 
-At the repeated 256-byte point, Slab is 0.309% lower in median QPS. That is no
-measured speed advantage. Slab also reserves more memory because each of 64
-shards owns at least one 1 MiB backing slab. The apparent 4096-byte Slab gain is
-only one exploratory repetition and is not treated as a performance claim.
+在重复三次的 256 字节点，Slab 中位 QPS 低 0.309%，没有测得速度优势。Slab 还会预留
+更多内存，因为 64 个 shard 对每个活跃 size class 都可能持有至少一个 1 MiB backing
+slab。4096 字节点表面上的 Slab 增益只有一次探索结果，不作为性能结论。
 
-The Slab allocator is an implemented allocator-engineering experiment, but this
-workload did not demonstrate a throughput advantage over the system allocator.
+Slab 是已经实现并验证的分配器工程实验，但这个负载没有证明它比系统分配器吞吐更高。
 
-## Shard Count
+## Shard 数量
 
-Workload B, 256-byte values, and Slab allocation were held fixed:
+固定负载 B、256 字节 value 和 Slab：
 
 | Shards | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU % |
 |---:|---:|---:|---:|---:|---:|---:|
@@ -134,38 +119,33 @@ Workload B, 256-byte values, and Slab allocation were held fixed:
 | 64 | 163020.720 | 774.789 | 601.902 | 1799.990 | 3957.815 | 350.322 |
 | 128 | 162906.096 | 771.985 | 602.097 | 1801.107 | 3930.115 | 350.314 |
 
-The main QPS benefit appears by four shards. Results from 4 through 128 are
-non-monotonic and cluster around 157k-163k QPS; 32, 64, and 128 are effectively
-flat at about 163k in their median runs. More shards are not always better on
-this machine, and they increase minimum Slab reservation.
+主要 QPS 收益到 4 shards 时已经出现。4 至 128 的结果不单调，集中在约 157k 至 163k
+QPS；32、64、128 的中位结果实际上都约为 163k。此机器上更多 shard 不保证更好，
+同时还会增加 Slab 最小预留。
 
-## Thread Scaling
+## 客户端线程扩展
 
-Only client threads change; the server remains at four workers and connections
-remain at 128:
+只改变客户端线程数；服务器固定四个 worker，连接数固定 128：
 
-| Client threads | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU % |
+| 客户端线程 | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU % |
 |---:|---:|---:|---:|---:|---:|---:|
 | 1 | 58218.834 | 2196.563 | 1729.995 | 4133.015 | 4863.419 | 100.567 |
 | 2 | 95208.316 | 1340.607 | 1248.604 | 1988.096 | 2539.994 | 196.522 |
 | 4 | 186072.217 | 678.359 | 579.499 | 1262.803 | 2182.907 | 370.067 |
 | 8 | 162858.403 | 770.267 | 607.296 | 1791.689 | 3651.177 | 347.681 |
 
-Scaling peaks at four client threads in this environment. The client and server
-share eight logical CPUs, and WSL scheduling may also affect the curve, but the
-experiment did not establish either as the cause of the eight-thread
-regression. Sixteen client threads were omitted to avoid additional shared-host
-load.
+这一环境在四个客户端线程时达到峰值。客户端与服务器共享八个逻辑 CPU，WSL 调度也可能
+影响曲线，但实验没有证明其中任何一个是八线程回退的确定原因。为避免增加共享主机负载，
+未测试 16 个客户端线程。
 
-## perf Findings
+## `perf` 分析
 
-The installed `perf` command did not match the WSL kernel. Ubuntu's perf 6.8.12
-package and `libtraceevent1` were extracted without root and run with an
-explicit `LD_LIBRARY_PATH`. Counting works through `-p`; sampling required the
-explicit comma-separated `/proc/<pid>/task` thread IDs. Release binaries retain
-debug information. Sanitizer binaries were not profiled.
+系统安装的 `perf` 与 WSL kernel 不匹配，因此从 Ubuntu 包中无 root 解压 perf 6.8.12
+和 `libtraceevent1`，并通过显式 `LD_LIBRARY_PATH` 运行。`-p` 可以计数，但采样需要
+显式列出 `/proc/<pid>/task` 中逗号分隔的 thread ID。Release binary 保留 debug info，
+没有对 sanitizer binary 做 profile。
 
-Representative commands, with the actual package path abbreviated as `perf`:
+以下是代表性命令，其中实际包路径缩写为 `perf`：
 
 ```bash
 ./build-release/highcache_server benchmark/phase7_server.conf &
@@ -186,81 +166,70 @@ perf report --stdio --no-children --percent-limit 0.5 \
   --sort comm,dso,symbol -i /tmp/highcache-phase7-perf.data
 ```
 
-Each command overlapped a real 3- or 5-million-request Workload B client run.
-`perf stat` completed normally and reported:
+每条命令都与一次真实的 300 万或 500 万请求负载 B 客户端运行重叠。`perf stat` 正常完成：
 
 | Counter | Value |
 |---|---:|
-| task-clock | 72391.26 ms, 3.616 CPUs utilized |
+| task-clock | 72391.26 ms，3.616 CPUs utilized |
 | cycles | 59631311192 |
-| instructions | 10267884685, 0.17 IPC |
+| instructions | 10267884685，0.17 IPC |
 | branches | 2092920828 |
-| branch misses | 102796594, 4.91% |
+| branch misses | 102796594，4.91% |
 | cache references | 5088907733 |
-| cache misses | 230567168, 4.53% |
+| cache misses | 230567168，4.53% |
 | context switches / migrations | 0 / 0 |
 
-The events were restricted to user space (`:u`) by this WSL environment, so
-zero context-switch and migration counts are unavailable kernel data, not a
-claim that scheduling never occurred.
+WSL 环境把事件限制到 user space（`:u`），所以为零的 context-switch 和 migration 是
+缺失的 kernel 数据，不表示调度从未发生。
 
-`perf top` collected 107-118 samples/s. Its last active snapshots put the
-unresolved libc zero-fill routine at 25.79-25.91%, `recv` at 12.24-13.89%,
-`epoll_ctl` at 12.86-15.21%, `send` at 9.19-9.28%, and hash lookup at
-4.82-6.65%.
+`perf top` 每秒采集 107 至 118 个样本。最后的活跃快照中，未解析的 libc zero-fill
+routine 占 25.79% 至 25.91%，`recv` 占 12.24% 至 13.89%，`epoll_ctl` 占
+12.86% 至 15.21%，`send` 占 9.19% 至 9.28%，hash lookup 占 4.82% 至 6.65%。
 
-The saved pre-change `perf record` captured 1835 samples with zero lost. Its
-leading entries were the libc routine at 25.45%, `epoll_ctl` at 14.01%, `recv`
-at 13.19%, `send` at 8.72%, and cache hash lookup at 6.54%. Raw text is retained
-in `benchmark/results/phase7_perf_stat.txt`, `phase7_perf_top.txt`,
-`phase7_perf_record.txt`, and `phase7_perf_report.txt`; the temporary binary
-`perf.data` is not committed.
+优化前保存的 `perf record` 共捕获 1835 个样本，lost 为 0。主要条目为 libc routine
+25.45%、`epoll_ctl` 14.01%、`recv` 13.19%、`send` 8.72%、cache hash lookup
+6.54%。原始文本保存在 `benchmark/results/phase7_perf_stat.txt`、
+`phase7_perf_top.txt`、`phase7_perf_record.txt` 和 `phase7_perf_report.txt`；临时二进制
+`perf.data` 不提交到仓库。
 
-## Bottleneck
+## 瓶颈定位
 
-Disassembly resolves the leading libc address `0x18954a` to `rep stos`. Its
-call chain is `Connection::handle_readable()`. That function declared a
-value-initialized `std::array<char, 65536>`, clearing all 64 KiB on every
-readable event before `recv` overwrote the received prefix. This explained
-25.45% of the pre-change samples and was larger than any named syscall or cache
-function.
+反汇编把 libc 首要地址 `0x18954a` 解析为 `rep stos`，调用链落在
+`Connection::handle_readable()`。该函数声明了 value-initialized
+`std::array<char, 65536>`，每次可读事件都先清零全部 64 KiB，随后 `recv` 又覆盖实际
+收到的前缀。这解释了优化前 25.45% 的样本，比任何有名称的 syscall 或 cache function
+占比都高。
 
-## Optimization
+## 优化与复测
 
-Hypothesis: leave the stack buffer uninitialized and append only the positive
-byte count returned by `recv`. No unwritten byte is observed, while the 64 KiB
-zero-fill is eliminated. Only the server declaration changed; client code and
-benchmark generation did not.
+假设：不初始化栈上数组，并且只追加 `recv` 返回的正字节数，即可消除 64 KiB zero-fill，
+同时不会观察未写入字节。实现只改变服务器中的数组声明；客户端代码与 workload 生成
+没有变化。
 
-The identical one-million-request Workload B comparison selected the
-median-QPS run from each set of three:
+完全相同的 100 万请求负载 B 在修改前后各运行三次，分别选择中位 QPS 对应的完整一行：
 
-| Version | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU s | Server CPU % |
+| 版本 | QPS | AVG us | P50 us | P95 us | P99 us | Server CPU s | Server CPU % |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Before | 161681.761 | 750.357 | 596.900 | 1666.600 | 3507.201 | 24.23 | 346.477 |
-| After | 174477.848 | 716.723 | 486.400 | 2139.299 | 4095.503 | 21.65 | 332.591 |
+| 优化前 | 161681.761 | 750.357 | 596.900 | 1666.600 | 3507.201 | 24.23 | 346.477 |
+| 优化后 | 174477.848 | 716.723 | 486.400 | 2139.299 | 4095.503 | 21.65 | 332.591 |
 
-Median QPS improved 7.914%, AVG fell 4.482%, P50 fell 18.512%, and server CPU
-time fell 10.648%. P95 regressed 28.363% and P99 regressed 16.774%; the change
-is retained for its measured throughput/CPU benefit, not claimed as a uniform
-latency improvement.
+中位 QPS 提高 7.914%，AVG 降低 4.482%，P50 降低 18.512%，server CPU time 降低
+10.648%。与此同时，P95 回退 28.363%，P99 回退 16.774%。保留该改动是因为测得吞吐
+和 CPU 收益，并不宣称延迟全面改善。
 
-The post-change profile captured 968 samples with zero lost. The zero-fill
-routine disappeared; the new leaders were `epoll_ctl` at 20.25%, `recv` at
-18.39%, `send` at 10.02%, and hash lookup at 8.78%. The saved confirmation is
-`benchmark/results/phase7_perf_report_after.txt`.
+优化后 profile 捕获 968 个样本，lost 为 0。zero-fill routine 消失；新的主要条目为
+`epoll_ctl` 20.25%、`recv` 18.39%、`send` 10.02%、hash lookup 8.78%。确认结果
+保存在 `benchmark/results/phase7_perf_report_after.txt`。
 
-## Reproduction
+## 复现方式
 
-For a practical one-command representative run using the retained Release
-binaries and fixed mixed-workload defaults:
+使用已构建 Release binary 和固定混合负载参数完成一次实用的代表性测试：
 
 ```bash
 ./scripts/run_benchmark.sh
 ```
 
-That quick entry point is separate from the full measurement matrix below and
-does not append to the committed Phase 7 CSV.
+该快速入口独立于完整测量矩阵，不会向已提交的原始 CSV 追加数据。重建并运行完整矩阵：
 
 ```bash
 cmake -E remove_directory build-release
@@ -272,23 +241,21 @@ cmake --build build-release -j
 HIGHCACHE_CODE_LABEL=after ./scripts/run_phase7_benchmarks.sh optimization
 ```
 
-The runner restarts the server for each repetition and records every result,
-server CPU/RSS, logical bytes, and allocator metrics. Environment variables at
-the top of the script provide explicit overrides.
+runner 每次重复都会重启服务器，并记录完整结果、server CPU/RSS、logical bytes 和
+allocator metrics。脚本开头的环境变量可覆盖所有关键参数。
 
-## Correctness
+## 正确性
 
-After the optimization, both the Debug suite and the ASan/UBSan suite passed
-159 of 159 discovered tests. Release compilation emitted no warnings under
-`-Wall -Wextra -Wpedantic`.
+完成优化后，Debug 与 ASan/UBSan suite 都通过当时发现的 159 / 159 个测试。Release
+编译在 `-Wall -Wextra -Wpedantic` 下没有 warning。仓库后续工程验证增至 160 个测试，
+结果见[验证记录](validation.md)。
 
-## Limitations
+## 结果限制
 
-- Loopback networking does not represent a physical network.
-- Client and server contend for the same CPUs and memory bandwidth.
-- WSL2 scheduling and host activity introduce visible noise.
-- Hardware sampling did not work through `perf -p`; explicit thread IDs and
-  the `cpu-clock:u` software event were required.
-- Kernel-only perf counters were unavailable.
-- Results describe one machine, toolchain, and uniform-key workload.
-- Non-256-byte allocator points have one repetition and are exploratory.
+- loopback 网络不代表物理网络。
+- 客户端与服务器争用同一组 CPU 和内存带宽。
+- WSL2 调度与宿主机活动带来可见噪声。
+- `perf -p` 无法完成 hardware sampling，必须显式 thread ID 和 `cpu-clock:u` 软件事件。
+- kernel-only perf counter 不可用。
+- 结果只描述一台机器、一套工具链和 uniform-key workload。
+- 非 256 字节的 allocator 测量点只有一次重复，仅供探索。

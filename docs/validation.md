@@ -1,36 +1,33 @@
-# Final Validation Record
+# HighCache 最终验证记录
 
-This record captures the Phase 8 validation performed on 2026-08-18 in the
-working tree that started at commit `63cdec4`.
+本文记录 2026-08-18 在初始提交 `63cdec4` 所对应实现上完成的工程验证。记录覆盖构建、
+测试、Sanitizer、真实 TCP 快速压测与长时间稳定性，不把无法可靠运行的项目写成通过。
 
-## Reproducible Commands
+## 可复现命令
 
-Normal Release build:
+### Release 构建
 
 ```bash
 ./scripts/build.sh
 ```
 
-The verified clean run used the default `build-release` directory and produced
-`highcache_server`, `highcache_client`, and `highcache_benchmark` without
-compiler warnings. `./scripts/run_server.sh` was run under a controlled
-`SIGTERM`; it logged the listen address, final metrics, and clean shutdown.
+经验证的 clean build 使用默认 `build-release` 目录，生成 `highcache_server`、
+`highcache_client` 和 `highcache_benchmark`，没有编译器 warning。随后在受控
+`SIGTERM` 下运行 `./scripts/run_server.sh`，日志包含监听地址、最终指标和正常关闭过程。
 
-Representative benchmark:
+### 代表性快速压测
 
 ```bash
 ./scripts/run_benchmark.sh
 ```
 
-This starts a temporary server with `benchmark/phase7_server.conf`, runs one
-million measured requests using 80% GET / 20% SET, 256-byte values, 100,000
-keys, four client threads, 128 connections, seed 12345, and 10,000 warmup
-requests, then stops the server. The observed run completed 1,000,000 of
-1,000,000 requests successfully in 5.137 seconds at 194678.003 requests/sec.
-This is a reproducibility smoke benchmark, not a replacement for the retained
-Phase 7 experiment matrix.
+脚本使用 `benchmark/phase7_server.conf` 启动临时服务器，执行 100 万条计量请求：
+80% GET / 20% SET、256 字节 value、100,000 个 key、4 个客户端线程、128 个连接、
+seed 12345，以及 10,000 条 warmup 请求，随后停止服务器。该次验证完成
+1,000,000 / 1,000,000 条成功请求，用时 5.137 秒，吞吐 194678.003 requests/sec。
+它是复现路径的 smoke benchmark，不替代保留的完整实验矩阵。
 
-Debug and CTest:
+### Debug 与 CTest
 
 ```bash
 cmake -E remove_directory build
@@ -39,7 +36,7 @@ cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
-ASan, UBSan, and LeakSanitizer:
+### ASan、UBSan 与 LeakSanitizer
 
 ```bash
 cmake -E remove_directory build-asan
@@ -50,17 +47,15 @@ cmake --build build-asan -j
 ctest --test-dir build-asan --output-on-failure
 ```
 
-## Stability
+## 长时间稳定性
 
-The real Release TCP server ran continuously from
-`2026-08-18T01:25:45+08:00` through `2026-08-18T01:55:46+08:00`, for an actual
-elapsed duration of 1801 seconds. A priming client first populated the cache;
-the measured loop then repeated the fixed mixed workload with four client
-threads, 128 connections, 1,000,000 measured requests per iteration, 100,000
-keys, 256-byte values, 80% GET / 20% SET, seed 12345, and 10,000 warmup
-requests. Clients connected and disconnected for every iteration.
+真实 Release TCP 服务从 `2026-08-18T01:25:45+08:00` 连续运行至
+`2026-08-18T01:55:46+08:00`，实际经过 1801 秒。priming client 先填充缓存；计量
+循环随后反复执行固定混合负载：4 个客户端线程、128 个连接、每轮 1,000,000 条计量
+请求、100,000 个 key、256 字节 value、80% GET / 20% SET、seed 12345 和 10,000 条
+warmup 请求。客户端每轮都会连接并断开。
 
-The run completed 294 iterations and processed 294,000,000 measured requests:
+运行完成 294 轮，共处理 294,000,000 条计量请求：
 
 ```text
 successful requests: 294000000
@@ -70,28 +65,22 @@ unexpected exit:     0
 server exit status:  0
 ```
 
-After each client cycle, the server had 21 open descriptors. The observed fd
-range was 21-21 at those post-disconnect samples, and the final count was 21.
-RSS was 94,368 KiB at the start, ranged from 94,368 to 94,384 KiB, and ended at
-94,384 KiB. The server log reported 100,000 live entries and clean allocator
-metrics at shutdown. No corrupted responses, transport failures, or temporary
-client errors were recorded.
+每轮客户端断开后的服务器 fd 都是 21：起始值、观测最小值、最大值和最终值均为 21。
+RSS 起始为 94,368 KiB，观测范围为 94,368 至 94,384 KiB，最终为 94,384 KiB。
+关闭时日志报告 100,000 个 live entry 和正常的 allocator 指标。过程中未记录响应损坏、
+传输失败或临时客户端错误。
 
-## Correctness Results
+## 正确性结果
 
-The Debug and ASan/UBSan CTest runs each discovered and passed 160 tests. The
-sanitizer run emitted no ASan, UBSan, or LeakSanitizer diagnostics. Release and
-Debug compilation completed without `-Wall -Wextra -Wpedantic` warnings.
+Debug 与 ASan/UBSan CTest 均发现并通过 160 个测试。Sanitizer 运行未输出 ASan、UBSan
+或 LeakSanitizer diagnostic。Release 与 Debug 编译在 `-Wall -Wextra -Wpedantic`
+下均无 warning。
 
-ThreadSanitizer was not claimed: the known WSL2 runtime could not execute the
-TSan build reliably. The stability and benchmark runs used the real IPv4
-loopback TCP path, not direct cache calls.
+ThreadSanitizer 不列为通过项：已知 WSL2 运行时无法可靠执行该 TSan build。稳定性和
+压测均使用真实 IPv4 loopback TCP 数据路径，而非直接调用 cache API。
 
-## Scope and Limits
+## 结论边界
 
-This record validates the existing Phase 0-7 implementation and Phase 8
-documentation/reproducibility infrastructure. It does not claim distributed
-behavior, physical-network performance, universal shard sizing, a Slab
-throughput win, or a tail-latency improvement from the retained receive-buffer
-optimization. See [benchmark.md](benchmark.md) and
-[design-decisions.md](design-decisions.md) for measured tradeoffs.
+这些结果验证当前单节点实现及文档化的复现流程，不宣称分布式行为、物理网络性能、
+通用 shard 数量、Slab 吞吐优势，也不宣称保留的接收 buffer 优化改善尾延迟。具体实测
+取舍见[性能测试与分析](benchmark.md)和[设计决策](design-decisions.md)。
